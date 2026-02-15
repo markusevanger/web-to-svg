@@ -14,6 +14,13 @@ import contentCSS from './content.css';
   styleEl.textContent = contentCSS;
   document.head.appendChild(styleEl);
 
+  // Full-viewport shield — sits on top of all page content so CSS :hover
+  // states don't fire on page elements while the picker is active.
+  // elementsFromPoint still returns elements underneath; isOwnElement filters it out.
+  const shield = document.createElement('div');
+  shield.className = 'ets-shield';
+  document.body.appendChild(shield);
+
   // Create highlight overlay
   const highlight = document.createElement('div');
   highlight.className = 'ets-highlight';
@@ -32,11 +39,18 @@ import contentCSS from './content.css';
   preview.style.display = 'none';
   document.body.appendChild(preview);
 
+  const HOVER_PREVIEW_MAX_DESCENDANTS = 500;
+
   let currentTarget = null;
   let hoverTimer = null;
   let previewAbort = null;
   let cachedSvgString = null;
   let pinned = false;
+  let depthOffset = 0;       // scroll-wheel: 0 = topmost element, +N = N parents up
+  let baseTarget = null;     // the raw topmost element under cursor (before depth walk)
+  let depthNavTimer = null;  // auto-hide depth nav after scrolling stops
+  let depthNavReady = false; // true once a preview has loaded for current baseTarget
+  let pinnedCopySvg = null;  // set by pinPreview so keydown can trigger copy
 
   // Loading indicator (lives inside preview container)
   const loader = document.createElement('div');
@@ -53,6 +67,37 @@ import contentCSS from './content.css';
   loader.appendChild(loaderLabel);
   loader.appendChild(loaderTrack);
   preview.appendChild(loader);
+
+  // Depth navigator — shows DOM ancestor chain as nested boxes
+  const depthNav = document.createElement('div');
+  depthNav.className = 'ets-depth-nav';
+  depthNav.style.display = 'none';
+  preview.appendChild(depthNav);
+
+  // Custom scroll-hint cursor (dot + animated chevrons)
+  const scrollCursor = document.createElement('div');
+  scrollCursor.className = 'ets-scroll-cursor';
+  scrollCursor.innerHTML =
+    '<span class="ets-sc-chevron ets-sc-up"></span>' +
+    '<span class="ets-sc-dot"></span>' +
+    '<span class="ets-sc-chevron ets-sc-down"></span>';
+  scrollCursor.style.display = 'none';
+  document.body.appendChild(scrollCursor);
+
+  function showScrollCursor() {
+    scrollCursor.style.display = 'flex';
+    document.documentElement.classList.add('ets-cursor-hidden');
+  }
+
+  function hideScrollCursor() {
+    scrollCursor.style.display = 'none';
+    document.documentElement.classList.remove('ets-cursor-hidden');
+  }
+
+  function positionScrollCursor(cx, cy) {
+    scrollCursor.style.left = cx + 'px';
+    scrollCursor.style.top = cy + 'px';
+  }
 
   function showToast(message) {
     const el = document.createElement('div');
@@ -97,22 +142,29 @@ import contentCSS from './content.css';
   function hidePreview() {
     clearTimeout(hoverTimer);
     hoverTimer = null;
+    clearTimeout(depthNavTimer);
+    depthNavTimer = null;
     previewAbort?.abort();
     previewAbort = null;
     cachedSvgString = null;
+    hideScrollCursor();
     loader.style.display = 'none';
     loaderLabel.textContent = 'Processing\u2026';
+    loaderBar.style.display = '';
     loaderBar.style.animation = 'none';
+    depthNav.style.display = 'none';
+    depthNav.innerHTML = '';
     preview.style.display = 'none';
     preview.classList.remove('ets-preview-pinned');
-    // Remove everything except the loader
+    // Remove everything except the loader and depth nav
     for (const child of [...preview.children]) {
-      if (child !== loader) child.remove();
+      if (child !== loader && child !== depthNav) child.remove();
     }
   }
 
   function cleanup() {
     pinned = false;
+    pinnedCopySvg = null;
     if (preview._docClickHandler) {
       document.removeEventListener('click', preview._docClickHandler, true);
       preview._docClickHandler = null;
@@ -120,19 +172,22 @@ import contentCSS from './content.css';
     window.__elementToSvgActive = false;
     window.__elementToSvgCleanup = undefined;
     document.removeEventListener('mousemove', onMouseMove, true);
+    document.removeEventListener('wheel', onWheel, true);
     document.removeEventListener('click', onClick, true);
     document.removeEventListener('keydown', onKeyDown, true);
     hidePreview();
+    shield.remove();
     highlight.remove();
     tooltip.remove();
     preview.remove();
+    scrollCursor.remove();
     styleEl.remove();
   }
 
   window.__elementToSvgCleanup = cleanup;
 
   function isOwnElement(el) {
-    return el === highlight || el === tooltip || el === preview ||
+    return el === shield || el === highlight || el === tooltip || el === preview ||
       el === loader || preview.contains(el);
   }
 
@@ -177,13 +232,23 @@ import contentCSS from './content.css';
     });
   }
 
-  function makeSplitBtn(label, primaryClass, primaryHandler, items) {
+  function makeSplitBtn(label, primaryClass, primaryHandler, items, shortcutHint) {
     const wrap = document.createElement('div');
     wrap.className = 'ets-split-btn';
 
     const main = document.createElement('button');
     main.className = 'ets-btn ' + primaryClass + ' ets-split-main';
-    main.textContent = label;
+    if (shortcutHint) {
+      const labelSpan = document.createElement('span');
+      labelSpan.textContent = label;
+      const kbd = document.createElement('kbd');
+      kbd.className = 'ets-kbd';
+      kbd.textContent = shortcutHint;
+      main.appendChild(labelSpan);
+      main.appendChild(kbd);
+    } else {
+      main.textContent = label;
+    }
     main.addEventListener('click', primaryHandler);
 
     const toggle = document.createElement('button');
@@ -277,9 +342,20 @@ import contentCSS from './content.css';
 
   function pinPreview(element, svgString) {
     pinned = true;
+    hideScrollCursor();
 
     // Mutable state — reconvert updates these
     const state = { svg: svgString };
+
+    async function copySvg() {
+      try {
+        await navigator.clipboard.writeText(state.svg);
+        showToast('SVG copied to clipboard');
+      } catch {
+        showToast('Copy failed \u2014 check permissions');
+      }
+    }
+    pinnedCopySvg = copySvg;
 
     async function reconvert() {
       const thumb = preview.querySelector('.ets-thumb');
@@ -300,6 +376,7 @@ import contentCSS from './content.css';
 
     // Stop picker listeners
     document.removeEventListener('mousemove', onMouseMove, true);
+    document.removeEventListener('wheel', onWheel, true);
     document.removeEventListener('click', onClick, true);
     highlight.style.display = 'none';
     tooltip.style.display = 'none';
@@ -356,29 +433,17 @@ import contentCSS from './content.css';
       btnRow.className = 'ets-btn-row';
 
       // SVG split button
-      btnRow.appendChild(makeSplitBtn('Copy SVG', 'ets-btn-primary', async () => {
-        try {
-          await navigator.clipboard.writeText(state.svg);
-          showToast('SVG copied to clipboard');
-        } catch {
-          showToast('Copy failed — check permissions');
-        }
-      }, [
-        ['Copy SVG', async () => {
-          try {
-            await navigator.clipboard.writeText(state.svg);
-            showToast('SVG copied to clipboard');
-          } catch {
-            showToast('Copy failed — check permissions');
-          }
-        }],
+      const isMac = /Mac|iPhone|iPad/.test(navigator.userAgent);
+      const modKey = isMac ? '\u2318' : 'Ctrl+';
+      btnRow.appendChild(makeSplitBtn('Copy SVG', 'ets-btn-primary', copySvg, [
+        ['Copy SVG', copySvg],
         ['Download SVG', async () => {
           const blob = new Blob([state.svg], { type: 'image/svg+xml;charset=utf-8' });
           const dataUrl = await blobToDataUrl(blob);
           chrome.runtime.sendMessage({ action: 'download', dataUrl, filename: baseName + '.svg' });
           showToast('SVG downloaded');
         }],
-      ]));
+      ], modKey + 'C'));
 
       // PNG split button
       btnRow.appendChild(makeSplitBtn('Copy PNG', 'ets-btn-secondary', async () => {
@@ -441,65 +506,130 @@ import contentCSS from './content.css';
     preview._docClickHandler = onDocClick;
   }
 
-  function onMouseMove(e) {
-    const els = document.elementsFromPoint(e.clientX, e.clientY);
-    const target = els.find((el) => !isOwnElement(el) && el !== document.body && el !== document.documentElement);
+  /**
+   * Short label for an element: tag + first class (truncated).
+   */
+  function elementLabel(el) {
+    const tag = el.tagName.toLowerCase();
+    if (el.id) return `${tag}#${el.id.substring(0, 12)}`;
+    if (el.className && typeof el.className === 'string') {
+      const cls = el.className.trim().split(/\s+/)[0];
+      if (cls) return `${tag}.${cls.substring(0, 14)}`;
+    }
+    return tag;
+  }
 
-    if (!target) {
-      highlight.style.display = 'none';
-      tooltip.style.display = 'none';
-      hidePreview();
-      currentTarget = null;
+  /**
+   * Build the ancestor chain from baseTarget up to the highest walkable ancestor.
+   * Returns array from outermost to innermost (base).
+   */
+  function getAncestorChain(base) {
+    const chain = [base];
+    let node = base;
+    while (node.parentElement && node.parentElement !== document.body && node.parentElement !== document.documentElement) {
+      chain.push(node.parentElement);
+      node = node.parentElement;
+    }
+    chain.reverse(); // outermost first
+    return chain;
+  }
+
+  /**
+   * Render the depth navigator showing nested boxes for the ancestor chain.
+   * The selected depth level is highlighted.
+   */
+  function updateDepthNav() {
+    if (!baseTarget || depthOffset === 0) {
+      depthNav.style.display = 'none';
       return;
     }
 
-    if (target !== currentTarget) {
-      hidePreview();
+    // When depth nav is active, hide the loader (they share the same space)
+    loader.style.display = 'none';
+
+    const chain = getAncestorChain(baseTarget);
+    // Index of selected element in the chain (chain is outermost-first)
+    const selectedIdx = chain.length - 1 - depthOffset;
+
+    depthNav.innerHTML = '';
+    depthNav.style.display = 'flex';
+
+    // Build nested boxes — outermost wraps innermost
+    // We show at most 5 levels to keep it compact, centered around the selection
+    const maxVisible = 5;
+    let startIdx = 0;
+    let endIdx = chain.length - 1;
+    if (chain.length > maxVisible) {
+      const half = Math.floor(maxVisible / 2);
+      startIdx = Math.max(0, selectedIdx - half);
+      endIdx = startIdx + maxVisible - 1;
+      if (endIdx >= chain.length) {
+        endIdx = chain.length - 1;
+        startIdx = endIdx - maxVisible + 1;
+      }
     }
 
-    currentTarget = target;
+    // Truncation indicator at top
+    if (startIdx > 0) {
+      const dots = document.createElement('span');
+      dots.className = 'ets-depth-dots';
+      dots.textContent = `\u2191 ${startIdx} more`;
+      depthNav.appendChild(dots);
+    }
+
+    // Create nested structure
+    let container = depthNav;
+    for (let i = startIdx; i <= endIdx; i++) {
+      const el = chain[i];
+      const isSelected = i === selectedIdx;
+      const isBase = i === chain.length - 1;
+
+      const box = document.createElement('div');
+      box.className = 'ets-depth-box' +
+        (isSelected ? ' ets-depth-selected' : '') +
+        (isBase ? ' ets-depth-base' : '');
+
+      const label = document.createElement('span');
+      label.className = 'ets-depth-label';
+      label.textContent = elementLabel(el);
+      box.appendChild(label);
+
+      container.appendChild(box);
+      container = box;
+    }
+
+    // Scroll hint at bottom
+    const hint = document.createElement('span');
+    hint.className = 'ets-depth-hint';
+    hint.textContent = 'scroll to navigate';
+    depthNav.appendChild(hint);
+
+    // Auto-hide after 500ms of no scrolling
+    clearTimeout(depthNavTimer);
+    depthNavTimer = setTimeout(() => {
+      depthNav.style.display = 'none';
+    }, 500);
+  }
+
+  /**
+   * Walk up from `el` by `levels` parent steps, skipping body/html.
+   * Returns the ancestor or the highest valid element if levels exceeds depth.
+   */
+  function walkUp(el, levels) {
+    let node = el;
+    for (let i = 0; i < levels; i++) {
+      const parent = node.parentElement;
+      if (!parent || parent === document.body || parent === document.documentElement) break;
+      node = parent;
+    }
+    return node;
+  }
+
+  /**
+   * Update highlight overlay and tooltip for the given target element.
+   */
+  function updateHighlight(target) {
     const rect = target.getBoundingClientRect();
-
-    // Keep preview following the cursor
-    if (preview.style.display !== 'none') {
-      positionPreview(e.clientX, e.clientY);
-    }
-
-    // Start hover preview timer if not already running for this element
-    if (!hoverTimer) {
-      const hoverTarget = target;
-      // Show preview container at cursor with loader bar
-      positionPreview(e.clientX, e.clientY);
-      preview.style.display = 'block';
-      loader.style.display = 'flex';
-      loaderLabel.textContent = 'Processing\u2026';
-      loaderBar.style.animation = 'none';
-      void loaderBar.offsetWidth; // force reflow to restart animation
-      loaderBar.style.animation = 'ets-loader-fill 0.5s linear forwards';
-
-      hoverTimer = setTimeout(async () => {
-        if (currentTarget !== hoverTarget) return;
-        // Keep loader visible with full bar while converting
-        loaderLabel.textContent = 'Converting\u2026';
-        loaderBar.classList.add('ets-loader-bar-pulse');
-        const ac = new AbortController();
-        previewAbort = ac;
-        try {
-          const svgString = await convertElementToSVG(hoverTarget);
-          if (ac.signal.aborted || currentTarget !== hoverTarget) return;
-          cachedSvgString = svgString;
-          const img = document.createElement('img');
-          img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgString);
-          img.style.cssText = 'width:100%;height:100%;object-fit:contain;';
-          preview.insertBefore(img, loader);
-          loader.style.display = 'none';
-          loaderBar.classList.remove('ets-loader-bar-pulse');
-        } catch {
-          loader.style.display = 'none';
-          loaderBar.classList.remove('ets-loader-bar-pulse');
-        }
-      }, 500);
-    }
 
     highlight.style.display = 'block';
     highlight.style.top = rect.top + 'px';
@@ -513,18 +643,183 @@ import contentCSS from './content.css';
     const cls = target.className && typeof target.className === 'string'
       ? '.' + target.className.trim().split(/\s+/)[0]
       : '';
-    tooltip.textContent = `<${tag}${cls}> ${w}\u00D7${h}`;
+    const depthHint = depthOffset > 0 ? ` \u2191${depthOffset}` : '';
+    tooltip.textContent = `<${tag}${cls}> ${w}\u00D7${h}${depthHint}`;
     tooltip.style.display = 'block';
 
-    // Position tooltip above the highlight
     let tooltipTop = rect.top - 28;
     if (tooltipTop < 4) tooltipTop = rect.bottom + 4;
     tooltip.style.top = tooltipTop + 'px';
     tooltip.style.left = rect.left + 'px';
   }
 
+  /**
+   * Check if an element has more than `limit` descendants.
+   * Uses TreeWalker with early exit to avoid counting every node.
+   */
+  function countDescendantsExceeds(el, limit) {
+    let count = 0;
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_ELEMENT);
+    while (walker.nextNode()) {
+      if (++count > limit) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Start the hover preview timer for a given element.
+   */
+  function startPreviewTimer(target, cx, cy) {
+    const hoverTarget = target;
+    positionPreview(cx, cy);
+    preview.style.display = 'block';
+
+    // Complexity gate: skip auto-preview for very large subtrees
+    // Uses TreeWalker with early exit instead of querySelectorAll('*').length
+    // to avoid counting every node in huge subtrees
+    if (countDescendantsExceeds(target, HOVER_PREVIEW_MAX_DESCENDANTS)) {
+      loader.style.display = 'flex';
+      loaderLabel.textContent = `Large element (${HOVER_PREVIEW_MAX_DESCENDANTS}+ nodes) \u2014 click to convert`;
+      loaderBar.style.display = 'none';
+      updateDepthNav();
+      // Set a dummy timer so hoverTimer is truthy (prevents re-entry)
+      hoverTimer = setTimeout(() => {}, 0);
+      return;
+    }
+
+    loader.style.display = 'flex';
+    loaderLabel.textContent = 'Processing\u2026';
+    loaderBar.style.display = '';
+    loaderBar.style.animation = 'none';
+    void loaderBar.offsetWidth;
+    loaderBar.style.animation = 'ets-loader-fill 0.5s linear forwards';
+    updateDepthNav();
+
+    hoverTimer = setTimeout(async () => {
+      if (currentTarget !== hoverTarget) return;
+      loaderLabel.textContent = 'Converting\u2026';
+      loaderBar.classList.add('ets-loader-bar-pulse');
+      const ac = new AbortController();
+      previewAbort = ac;
+      try {
+        const svgString = await convertElementToSVG(hoverTarget);
+        if (ac.signal.aborted || currentTarget !== hoverTarget) return;
+        cachedSvgString = svgString;
+        depthNavReady = true;
+        const img = document.createElement('img');
+        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgString);
+        img.style.cssText = 'width:100%;height:100%;object-fit:contain;';
+        preview.insertBefore(img, loader);
+        loader.style.display = 'none';
+        loaderBar.classList.remove('ets-loader-bar-pulse');
+        showScrollCursor();
+      } catch (err) {
+        console.warn('[Element to SVG] Preview conversion failed:', err);
+        loader.style.display = 'none';
+        loaderBar.classList.remove('ets-loader-bar-pulse');
+      }
+    }, 500);
+  }
+
+  let mouseMoveQueued = false;
+  let lastMouseX = 0;
+  let lastMouseY = 0;
+
+  function onMouseMove(e) {
+    lastMouseX = e.clientX;
+    lastMouseY = e.clientY;
+    if (mouseMoveQueued) return;
+    mouseMoveQueued = true;
+    requestAnimationFrame(() => {
+      mouseMoveQueued = false;
+      processMouseMove(lastMouseX, lastMouseY);
+    });
+  }
+
+  function processMouseMove(cx, cy) {
+    if (pinned) return;
+    const els = document.elementsFromPoint(cx, cy);
+    const rawTarget = els.find((el) => !isOwnElement(el) && el !== document.body && el !== document.documentElement);
+
+    if (!rawTarget) {
+      highlight.style.display = 'none';
+      tooltip.style.display = 'none';
+      hidePreview();
+      currentTarget = null;
+      baseTarget = null;
+      return;
+    }
+
+    // Reset depth when the raw element under cursor changes
+    if (rawTarget !== baseTarget) {
+      baseTarget = rawTarget;
+      depthOffset = 0;
+      depthNavReady = false;
+    }
+
+    const target = walkUp(rawTarget, depthOffset);
+
+    if (target !== currentTarget) {
+      hidePreview();
+    }
+
+    currentTarget = target;
+
+    // Keep preview and scroll cursor following the mouse
+    if (preview.style.display !== 'none') {
+      positionPreview(cx, cy);
+    }
+    positionScrollCursor(cx, cy);
+
+    // Start hover preview timer if not already running for this element
+    if (!hoverTimer) {
+      startPreviewTimer(target, cx, cy);
+    }
+
+    updateHighlight(target);
+  }
+
+  function onWheel(e) {
+    // Only hijack scroll for depth navigation after preview has loaded.
+    // Before that, let the wheel scroll the page normally.
+    if (!baseTarget || !depthNavReady) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (e.deltaY < 0) {
+      // Scroll up → select parent
+      depthOffset++;
+    } else if (e.deltaY > 0) {
+      // Scroll down → select child (back toward original)
+      depthOffset = Math.max(0, depthOffset - 1);
+    }
+
+    const target = walkUp(baseTarget, depthOffset);
+
+    // Clamp: if walkUp couldn't go high enough, adjust depthOffset to match
+    let actual = 0;
+    let node = baseTarget;
+    while (node !== target) {
+      node = node.parentElement;
+      actual++;
+    }
+    depthOffset = actual;
+
+    if (target !== currentTarget) {
+      hidePreview();
+      currentTarget = target;
+      startPreviewTimer(target, e.clientX, e.clientY);
+    } else {
+      // Same target but depth changed — update the nav highlight
+      updateDepthNav();
+    }
+
+    updateHighlight(target);
+  }
+
   async function onClick(e) {
-    if (!currentTarget || isOwnElement(e.target)) return;
+    // Shield intercepts clicks to block :hover, but we still want to handle them
+    if (!currentTarget || (isOwnElement(e.target) && e.target !== shield)) return;
 
     e.preventDefault();
     e.stopPropagation();
@@ -547,6 +842,7 @@ import contentCSS from './content.css';
 
     // Stop picker movement but keep preview visible with loader
     document.removeEventListener('mousemove', onMouseMove, true);
+    document.removeEventListener('wheel', onWheel, true);
     document.removeEventListener('click', onClick, true);
     highlight.style.display = 'none';
     tooltip.style.display = 'none';
@@ -584,9 +880,15 @@ import contentCSS from './content.css';
       e.stopPropagation();
       cleanup();
     }
+    if (e.key === 'c' && (e.metaKey || e.ctrlKey) && !e.shiftKey && pinned && pinnedCopySvg) {
+      e.preventDefault();
+      e.stopPropagation();
+      pinnedCopySvg();
+    }
   }
 
   document.addEventListener('mousemove', onMouseMove, true);
+  document.addEventListener('wheel', onWheel, { capture: true, passive: false });
   document.addEventListener('click', onClick, true);
   document.addEventListener('keydown', onKeyDown, true);
 })();

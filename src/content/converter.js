@@ -1,6 +1,12 @@
 import { elementToSVG, inlineResources } from 'dom-to-svg';
-import { outlineTextInSVG } from './outliner.js';
-import { optimizeForFigma } from './figma-optimizer.js';
+import { outlineTextInSVG, outlineTextInSVGDoc } from './outliner.js';
+import { optimizeForFigma, optimizeForFigmaDoc } from './figma-optimizer.js';
+
+function get2dContext(canvas) {
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Could not get canvas 2D context');
+  return ctx;
+}
 
 /**
  * Parse an rgba/rgb color string into { r, g, b, a } (0–255, a 0–1).
@@ -46,9 +52,24 @@ function colorToString(c) {
 }
 
 /**
+ * Determine the browser's canvas color (the backdrop behind all CSS).
+ * Browsers paint white by default, but honor color-scheme: dark by
+ * switching to a dark canvas. getComputedStyle never reports this —
+ * it's not a CSS background-color — so we infer it from color-scheme.
+ */
+function getCanvasColor() {
+  const cs = getComputedStyle(document.documentElement).colorScheme;
+  // color-scheme can be "dark", "light dark", "dark light", "normal", etc.
+  // If "dark" comes first or is the only value, the canvas is dark.
+  if (cs && /^\s*dark/i.test(cs)) return { r: 0, g: 0, b: 0, a: 1 };
+  return { r: 255, g: 255, b: 255, a: 1 };
+}
+
+/**
  * Walk up the DOM from `el` collecting and compositing background colors
  * until we hit a fully opaque layer or the document root.
- * Returns a resolved color string or null.
+ * Falls back to the browser canvas color (white or dark depending on
+ * color-scheme) so the exported SVG always has a background.
  */
 function resolveBackgroundColor(el) {
   // Collect all ancestors from element up to <html>
@@ -60,40 +81,52 @@ function resolveBackgroundColor(el) {
     node = node.parentElement;
   }
 
+  // Start with the browser canvas color as the base
+  let result = getCanvasColor();
+
   // Walk from outermost ancestor inward, compositing backgrounds
-  let result = null;
   for (let i = chain.length - 1; i >= 0; i--) {
     const bg = parseColor(getComputedStyle(chain[i]).backgroundColor);
     if (!bg || bg.a === 0) continue;
 
-    if (!result) {
-      result = bg;
-    } else {
-      result = compositeOver(bg, result);
-    }
-    // If fully opaque, no point looking further up — this layer covers everything
+    result = compositeOver(bg, result);
+    // If fully opaque, no point looking further inward
     if (result.a >= 1) break;
   }
 
-  if (!result || result.a === 0) return null;
   return colorToString(result);
 }
 
 /**
  * Insert a background <rect> as the first child of the SVG root element.
+ * Matches the viewBox so the rect covers the entire visible area,
+ * even when the viewBox origin is non-zero (e.g. dom-to-svg output
+ * uses page coordinates like viewBox="256 128 800 600").
+ * Operates in-place on a parsed SVG document.
  */
-function insertBackgroundRect(svgString, color) {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(svgString, 'image/svg+xml');
-  const svg = doc.documentElement;
+function insertBackgroundRectDoc(svgDoc, color) {
+  const svg = svgDoc.documentElement;
+  const rect = svgDoc.createElementNS('http://www.w3.org/2000/svg', 'rect');
 
-  const rect = doc.createElementNS('http://www.w3.org/2000/svg', 'rect');
-  rect.setAttribute('width', '100%');
-  rect.setAttribute('height', '100%');
+  const vb = svg.getAttribute('viewBox');
+  if (vb) {
+    const parts = vb.split(/[\s,]+/).map(Number);
+    if (parts.length >= 4 && parts.every(Number.isFinite)) {
+      rect.setAttribute('x', String(parts[0]));
+      rect.setAttribute('y', String(parts[1]));
+      rect.setAttribute('width', String(parts[2]));
+      rect.setAttribute('height', String(parts[3]));
+    } else {
+      rect.setAttribute('width', '100%');
+      rect.setAttribute('height', '100%');
+    }
+  } else {
+    rect.setAttribute('width', '100%');
+    rect.setAttribute('height', '100%');
+  }
+
   rect.setAttribute('fill', color);
   svg.insertBefore(rect, svg.firstChild);
-
-  return new XMLSerializer().serializeToString(svg);
 }
 
 /**
@@ -112,6 +145,7 @@ async function fetchAsDataUrl(url) {
   }
   // Fallback: direct fetch (works for same-origin or CORS-enabled resources)
   const resp = await fetch(url);
+  if (!resp.ok) throw new Error(`Fetch failed: ${resp.status} ${resp.statusText}`);
   const blob = await resp.blob();
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -236,57 +270,114 @@ function buildOutlineMarkup(width, height, elementStyle, radii) {
 }
 
 /**
- * Collect CSS outline info from all elements in the subtree.
- * Called before dom-to-svg conversion while we still have live DOM access.
- * Returns a list of outline descriptors with absolute positions.
+ * Single-pass collection of border-radii, outlines, and inline image jobs
+ * from all elements in the subtree. Replaces the three separate DOM walks
+ * (collectBorderRadiiMap + collectOutlines + preInlineImages) with one
+ * querySelectorAll('*') pass and one getComputedStyle per element.
+ *
+ * Returns { radiiMap, outlines, restoreImages() }.
  */
-function collectOutlines(root) {
+async function collectElementMetadata(root) {
+  const radiiMap = new Map();
   const outlines = [];
+  const restorers = [];
+
   const els = [root, ...root.querySelectorAll('*')];
+
+  const imgJobs = [];
+  const bgJobs = [];
+
   for (const el of els) {
     const style = getComputedStyle(el);
-    const outline = parseOutline(style);
-    if (!outline) continue;
-    const rect = el.getBoundingClientRect();
+
+    // --- border-radius + CSS outlines (share one getBoundingClientRect) ---
     const radii = parseBorderRadii(style);
-    outlines.push({
-      x: rect.x, y: rect.y, w: rect.width, h: rect.height,
-      radii,
-      outlineWidth: outline.outlineWidth,
-      outlineColor: outline.outlineColor,
-      outlineStyle: outline.outlineStyle,
-      outlineOffset: outline.outlineOffset,
-    });
+    const outline = parseOutline(style);
+    const needsRect = radii || outline;
+    const elRect = needsRect ? el.getBoundingClientRect() : null;
+
+    if (radii) {
+      const key = `${elRect.x.toFixed(1)},${elRect.y.toFixed(1)},${elRect.width.toFixed(1)},${elRect.height.toFixed(1)}`;
+      radiiMap.set(key, radii);
+    }
+
+    if (outline) {
+      outlines.push({
+        x: elRect.x, y: elRect.y, w: elRect.width, h: elRect.height,
+        radii,
+        outlineWidth: outline.outlineWidth,
+        outlineColor: outline.outlineColor,
+        outlineStyle: outline.outlineStyle,
+        outlineOffset: outline.outlineOffset,
+      });
+    }
+
+    // --- <img> inlining ---
+    if (el.tagName === 'IMG') {
+      const src = el.currentSrc || el.src;
+      if (src && !src.startsWith('data:') && !src.startsWith('blob:')) {
+        imgJobs.push((async () => {
+          try {
+            const dataUrl = await fetchAsDataUrl(src);
+            const origSrc = el.src;
+            const origSrcset = el.srcset;
+            el.src = dataUrl;
+            el.srcset = '';
+            restorers.push(() => { el.src = origSrc; el.srcset = origSrcset; });
+          } catch (err) { console.debug('[Element to SVG] Image inline failed:', err.message); }
+        })());
+      }
+    }
+
+    // --- CSS background-image inlining ---
+    const bg = style.backgroundImage;
+    if (bg && bg !== 'none') {
+      const urlMatch = bg.match(/url\(["']?(https?:\/\/[^"')]+)["']?\)/);
+      if (urlMatch) {
+        const url = urlMatch[1];
+        bgJobs.push((async () => {
+          try {
+            const dataUrl = await fetchAsDataUrl(url);
+            const origBg = el.style.backgroundImage;
+            el.style.backgroundImage = bg.replace(urlMatch[0], `url("${dataUrl}")`);
+            restorers.push(() => { el.style.backgroundImage = origBg; });
+          } catch (err) { console.debug('[Element to SVG] Background image inline failed:', err.message); }
+        })());
+      }
+    }
   }
-  return outlines;
+
+  await Promise.allSettled([...imgJobs, ...bgJobs]);
+
+  return {
+    radiiMap,
+    outlines,
+    restoreImages: () => restorers.forEach((fn) => fn()),
+  };
 }
 
 /**
- * Add CSS outline rendering to a serialized SVG string.
+ * Add CSS outline rendering to a parsed SVG document.
  * Outlines are drawn outside the element bounds, accounting for outline-offset.
+ * Operates in-place on a parsed SVG document.
  */
-function applyOutlinesToSVG(svgString, outlines) {
-  if (outlines.length === 0) return svgString;
+function applyOutlinesToSVGDoc(svgDoc, outlines) {
+  if (outlines.length === 0) return;
 
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(svgString, 'image/svg+xml');
-  const svg = doc.documentElement;
+  const svg = svgDoc.documentElement;
   const NS = 'http://www.w3.org/2000/svg';
 
-  // Parse current viewBox to expand it for outlines
   const vb = svg.getAttribute('viewBox');
   let vbMinX = 0, vbMinY = 0, vbW = 0, vbH = 0;
   if (vb) {
     [vbMinX, vbMinY, vbW, vbH] = vb.split(/[\s,]+/).map(Number);
   }
 
-  // Track how much extra space outlines need beyond the current viewBox
   let expandLeft = 0, expandTop = 0, expandRight = 0, expandBottom = 0;
 
   for (const o of outlines) {
     const { x, y, w, h, radii, outlineWidth, outlineColor, outlineStyle, outlineOffset } = o;
 
-    // Outer edge of the outline stroke (for viewBox expansion)
     const outerExpand = outlineOffset + outlineWidth;
     const outerLeft = x - outerExpand;
     const outerTop = y - outerExpand;
@@ -300,7 +391,6 @@ function applyOutlinesToSVG(svgString, outlines) {
       expandBottom = Math.max(expandBottom, outerBottom - (vbMinY + vbH));
     }
 
-    // Stroke center position (offset from element edge + half stroke width)
     const strokeCenter = outlineOffset + outlineWidth / 2;
     const ox = x - strokeCenter;
     const oy = y - strokeCenter;
@@ -315,11 +405,11 @@ function applyOutlinesToSVG(svgString, outlines) {
         br: Math.max(0, radii.br + strokeCenter),
         bl: Math.max(0, radii.bl + strokeCenter),
       };
-      el = doc.createElementNS(NS, 'path');
+      el = svgDoc.createElementNS(NS, 'path');
       el.setAttribute('d', roundedRectPath(ow, oh, expandedRadii));
       el.setAttribute('transform', `translate(${ox},${oy})`);
     } else {
-      el = doc.createElementNS(NS, 'rect');
+      el = svgDoc.createElementNS(NS, 'rect');
       el.setAttribute('x', String(ox));
       el.setAttribute('y', String(oy));
       el.setAttribute('width', String(ow));
@@ -333,7 +423,6 @@ function applyOutlinesToSVG(svgString, outlines) {
     svg.appendChild(el);
   }
 
-  // Expand viewBox and dimensions to fit outlines
   if (vb && (expandLeft > 0 || expandTop > 0 || expandRight > 0 || expandBottom > 0)) {
     svg.setAttribute('viewBox', `${vbMinX - expandLeft} ${vbMinY - expandTop} ${vbW + expandLeft + expandRight} ${vbH + expandTop + expandBottom}`);
     const origW = parseFloat(svg.getAttribute('width')) || vbW;
@@ -341,8 +430,6 @@ function applyOutlinesToSVG(svgString, outlines) {
     svg.setAttribute('width', String(origW + expandLeft + expandRight));
     svg.setAttribute('height', String(origH + expandTop + expandBottom));
   }
-
-  return new XMLSerializer().serializeToString(svg);
 }
 
 /**
@@ -413,43 +500,15 @@ function wrapInSvgImage(dataUrl, width, height, elementStyle, naturalW, naturalH
 }
 
 /**
- * Collect a map of bounding-rect keys → border radii for every element
- * in the subtree that has border-radius (regardless of overflow).
- * dom-to-svg uses getBoundingClientRect() for mask <rect> positions,
- * so we match by the same coordinates.
- */
-function collectBorderRadiiMap(root) {
-  const map = new Map();
-  const els = [root, ...root.querySelectorAll('*')];
-  for (const el of els) {
-    const style = getComputedStyle(el);
-    const radii = parseBorderRadii(style);
-    if (!radii) continue;
-    const rect = el.getBoundingClientRect();
-    // Key by x,y,w,h with 1-decimal precision to match dom-to-svg output
-    const key = `${rect.x.toFixed(1)},${rect.y.toFixed(1)},${rect.width.toFixed(1)},${rect.height.toFixed(1)}`;
-    map.set(key, radii);
-  }
-  return map;
-}
-
-/**
  * Post-process dom-to-svg output: find <mask> elements whose <rect> children
  * match a DOM element with border-radius, and replace the plain <rect> with
  * a rounded-rect <path> so the overflow clip respects border-radius.
- *
- * dom-to-svg creates masks like:
- *   <mask id="mask-for-...">
- *     <rect fill="#ffffff" x="..." y="..." width="..." height="..."/>
- *   </mask>
- * We replace the <rect> with a rounded <path> when border-radius applies.
+ * Operates in-place on a parsed SVG document.
  */
-function applyBorderRadiusToMasks(svgString, radiiMap) {
-  if (radiiMap.size === 0) return svgString;
+function applyBorderRadiusToMasksDoc(svgDoc, radiiMap) {
+  if (radiiMap.size === 0) return;
 
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(svgString, 'image/svg+xml');
-  const svg = doc.documentElement;
+  const svg = svgDoc.documentElement;
   const NS = 'http://www.w3.org/2000/svg';
 
   const masks = svg.querySelectorAll('mask');
@@ -464,17 +523,14 @@ function applyBorderRadiusToMasks(svgString, radiiMap) {
       const radii = radiiMap.get(key);
       if (!radii) continue;
 
-      // Replace <rect> with a rounded-rect <path>
       const pathD = roundedRectPath(w, h, radii);
-      const path = doc.createElementNS(NS, 'path');
+      const path = svgDoc.createElementNS(NS, 'path');
       path.setAttribute('d', pathD);
       path.setAttribute('transform', `translate(${x},${y})`);
       path.setAttribute('fill', rect.getAttribute('fill') || '#ffffff');
       rect.replaceWith(path);
     }
   }
-
-  return new XMLSerializer().serializeToString(svg);
 }
 
 /**
@@ -491,61 +547,25 @@ function resolveImageSrc(element) {
   return element.currentSrc || element.src;
 }
 
-/**
- * Pre-inline all cross-origin images and CSS background images within an
- * element tree by replacing their URLs with data URLs fetched through the
- * service worker. Returns a restore function that reverts all changes.
- */
-async function preInlineImages(root) {
-  const restorers = [];
-
-  // --- <img> elements ---
-  const imgs = root.tagName === 'IMG' ? [root] : [...root.querySelectorAll('img')];
-  const imgJobs = imgs.map(async (img) => {
-    const src = img.currentSrc || img.src;
-    if (!src || src.startsWith('data:') || src.startsWith('blob:')) return;
-    try {
-      const dataUrl = await fetchAsDataUrl(src);
-      const origSrc = img.src;
-      const origSrcset = img.srcset;
-      img.src = dataUrl;
-      img.srcset = '';
-      restorers.push(() => { img.src = origSrc; img.srcset = origSrcset; });
-    } catch {
-      // leave original src in place
-    }
-  });
-
-  // --- CSS background-image on all elements ---
-  const allEls = [root, ...root.querySelectorAll('*')];
-  const bgJobs = allEls.map(async (el) => {
-    const style = getComputedStyle(el);
-    const bg = style.backgroundImage;
-    if (!bg || bg === 'none') return;
-    // Extract url(...) values
-    const urlMatch = bg.match(/url\(["']?(https?:\/\/[^"')]+)["']?\)/);
-    if (!urlMatch) return;
-    const url = urlMatch[1];
-    try {
-      const dataUrl = await fetchAsDataUrl(url);
-      const origBg = el.style.backgroundImage;
-      el.style.backgroundImage = bg.replace(urlMatch[0], `url("${dataUrl}")`);
-      restorers.push(() => { el.style.backgroundImage = origBg; });
-    } catch {
-      // leave original background in place
-    }
-  });
-
-  await Promise.allSettled([...imgJobs, ...bgJobs]);
-
-  return () => restorers.forEach((fn) => fn());
-}
-
 export async function convertElementToSVG(element) {
   let svgString;
 
   // Resolve background color before conversion (need live DOM access)
   const bgColor = resolveBackgroundColor(element);
+
+  // Read settings early so conditional pipeline steps can check them
+  let settings;
+  try {
+    settings = await new Promise((resolve, reject) => {
+      chrome.storage.sync.get({ outlineText: true, captureBackground: true, optimizeForFigma: false }, (result) => {
+        if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
+        else resolve(result);
+      });
+    });
+  } catch (err) {
+    console.warn('[Element to SVG] Could not read settings, using defaults:', err);
+    settings = { outlineText: true, captureBackground: true, optimizeForFigma: false };
+  }
 
   const tag = element.tagName;
 
@@ -568,8 +588,7 @@ export async function convertElementToSVG(element) {
     const naturalW = imgEl?.naturalWidth || 0;
     const naturalH = imgEl?.naturalHeight || 0;
 
-    // Detect SVG source: data URI, .svg extension (ignoring query/hash), or svg+xml content type
-    const isSvgDataUri = src.startsWith('data:image/svg');
+    const isSvgDataUri = src.startsWith('data:image/svg+xml');
     const isSvgUrl = !isSvgDataUri && /\.svg(?:[?#]|$)/i.test(src);
 
     if (isSvgDataUri) {
@@ -577,7 +596,6 @@ export async function convertElementToSVG(element) {
       const encoded = src.substring(comma + 1);
       svgString = src.includes('base64') ? atob(encoded) : decodeURIComponent(encoded);
     } else if (isSvgUrl) {
-      // Fetch raw SVG via service worker to bypass CORS
       try {
         const resp = await new Promise((resolve, reject) => {
           chrome.runtime.sendMessage({ action: 'fetch-image', url: src }, (r) => {
@@ -589,17 +607,15 @@ export async function convertElementToSVG(element) {
         const encoded = resp.substring(comma + 1);
         svgString = resp.includes('base64') ? atob(encoded) : decodeURIComponent(encoded);
       } catch {
-        // Wasn't actually SVG, treat as raster
         const dataUrl = await fetchAsDataUrl(src);
         svgString = wrapInSvgImage(dataUrl, w, h, elStyle, naturalW, naturalH);
       }
     } else {
-      // Raster image — embed as data URL inside an SVG wrapper
       const dataUrl = src.startsWith('data:') ? src : await fetchAsDataUrl(src);
       svgString = wrapInSvgImage(dataUrl, w, h, elStyle, naturalW, naturalH);
     }
 
-  // <canvas> handling — grab pixel data from the canvas
+  // <canvas> handling
   } else if (tag === 'CANVAS') {
     const rect = element.getBoundingClientRect();
     const w = Math.round(rect.width);
@@ -607,7 +623,7 @@ export async function convertElementToSVG(element) {
     const dataUrl = element.toDataURL('image/png');
     svgString = wrapInSvgImage(dataUrl, w, h, getComputedStyle(element), element.width, element.height);
 
-  // <video> handling — capture current frame
+  // <video> handling
   } else if (tag === 'VIDEO') {
     const rect = element.getBoundingClientRect();
     const w = Math.round(rect.width);
@@ -617,62 +633,72 @@ export async function convertElementToSVG(element) {
     const canvas = document.createElement('canvas');
     canvas.width = natW;
     canvas.height = natH;
-    const ctx = canvas.getContext('2d');
+    const ctx = get2dContext(canvas);
     ctx.drawImage(element, 0, 0, natW, natH);
     const dataUrl = canvas.toDataURL('image/png');
     svgString = wrapInSvgImage(dataUrl, w, h, getComputedStyle(element), natW, natH);
 
   } else {
-    // Collect border-radius info and CSS outlines from all elements BEFORE dom-to-svg
-    // (need live DOM access for getComputedStyle + getBoundingClientRect)
-    const radiiMap = collectBorderRadiiMap(element);
-    const outlines = collectOutlines(element);
+    // Generic DOM element — single-pass metadata collection + dom-to-svg
+    const { radiiMap, outlines, restoreImages } = await collectElementMetadata(element);
 
-    // Pre-inline cross-origin images so dom-to-svg sees data URLs instead
-    const restore = await preInlineImages(element);
+    let svgDocument;
     try {
-      const svgDocument = elementToSVG(element);
+      svgDocument = elementToSVG(element);
 
-      // Inline remaining resources with a timeout
       await Promise.race([
         inlineResources(svgDocument.documentElement),
         new Promise((_, reject) => setTimeout(() => reject(new Error('Inlining resources timed out')), 10000)),
       ]);
-
-      svgString = new XMLSerializer().serializeToString(svgDocument);
     } finally {
-      restore();
+      restoreImages();
     }
 
-    // Post-process: add border-radius to dom-to-svg's overflow masks
-    svgString = applyBorderRadiusToMasks(svgString, radiiMap);
+    // --- Unified pipeline: operate in-place on the parsed SVG DOM ---
+    // 1. Border-radius masks
+    applyBorderRadiusToMasksDoc(svgDocument, radiiMap);
 
-    // Post-process: add CSS outlines (not supported by dom-to-svg)
-    svgString = applyOutlinesToSVG(svgString, outlines);
+    // 2. CSS outlines
+    applyOutlinesToSVGDoc(svgDocument, outlines);
+
+    // 3. Background rect
+    if (settings.captureBackground && bgColor) {
+      insertBackgroundRectDoc(svgDocument, bgColor);
+    }
+
+    // 4. Text outlining
+    if (settings.outlineText) {
+      try {
+        await outlineTextInSVGDoc(svgDocument);
+      } catch (err) {
+        console.warn('[Element to SVG] Text outlining failed, returning un-outlined SVG:', err);
+      }
+    }
+
+    // 5. Figma optimization
+    if (settings.optimizeForFigma) {
+      try {
+        optimizeForFigmaDoc(svgDocument);
+      } catch (err) {
+        console.warn('[Element to SVG] Figma optimization failed, returning unoptimized SVG:', err);
+      }
+    }
+
+    // 6. Serialize once
+    return new XMLSerializer().serializeToString(svgDocument.documentElement);
   }
 
-  // Read settings (with fallback if storage access fails in content script)
-  let settings;
-  try {
-    settings = await new Promise((resolve, reject) => {
-      chrome.storage.sync.get({ outlineText: true, captureBackground: true, optimizeForFigma: false }, (result) => {
-        if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
-        else resolve(result);
-      });
-    });
-  } catch (err) {
-    console.warn('[Element to SVG] Could not read settings, using defaults:', err);
-    settings = { outlineText: true, captureBackground: true, optimizeForFigma: false };
-  }
+  // --- For non-generic branches (SVG, IMG, CANVAS, VIDEO): parse → pipeline → serialize ---
+  const parser = new DOMParser();
+  const svgDoc = parser.parseFromString(svgString, 'image/svg+xml');
 
-  // Insert background rect if enabled and a color was found
   if (settings.captureBackground && bgColor) {
-    svgString = insertBackgroundRect(svgString, bgColor);
+    insertBackgroundRectDoc(svgDoc, bgColor);
   }
 
   if (settings.outlineText) {
     try {
-      svgString = await outlineTextInSVG(svgString);
+      await outlineTextInSVGDoc(svgDoc);
     } catch (err) {
       console.warn('[Element to SVG] Text outlining failed, returning un-outlined SVG:', err);
     }
@@ -680,20 +706,36 @@ export async function convertElementToSVG(element) {
 
   if (settings.optimizeForFigma) {
     try {
-      svgString = optimizeForFigma(svgString);
+      optimizeForFigmaDoc(svgDoc);
     } catch (err) {
       console.warn('[Element to SVG] Figma optimization failed, returning unoptimized SVG:', err);
     }
   }
 
-  return svgString;
+  return new XMLSerializer().serializeToString(svgDoc.documentElement);
 }
 
 export async function svgToPNG(svgString, width, height, scale = 2) {
+  if (!Number.isFinite(width) || !Number.isFinite(height) || !Number.isFinite(scale) ||
+      width <= 0 || height <= 0 || scale <= 0) {
+    throw new Error('Invalid canvas dimensions');
+  }
+
+  const MAX_CANVAS_DIM = 4096;
+  let canvasW = Math.round(width * scale);
+  let canvasH = Math.round(height * scale);
+
+  // Clamp to safe browser limit, scaling down proportionally
+  if (canvasW > MAX_CANVAS_DIM || canvasH > MAX_CANVAS_DIM) {
+    const ratio = Math.min(MAX_CANVAS_DIM / canvasW, MAX_CANVAS_DIM / canvasH);
+    canvasW = Math.round(canvasW * ratio);
+    canvasH = Math.round(canvasH * ratio);
+  }
+
   const canvas = document.createElement('canvas');
-  canvas.width = Math.round(width * scale);
-  canvas.height = Math.round(height * scale);
-  const ctx = canvas.getContext('2d');
+  canvas.width = canvasW;
+  canvas.height = canvasH;
+  const ctx = get2dContext(canvas);
 
   const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
   const url = URL.createObjectURL(blob);

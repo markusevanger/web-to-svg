@@ -218,25 +218,38 @@ function normalizeToOrigin(svg) {
 }
 
 /**
- * Main entry point. Takes an SVG string, returns an optimised SVG string.
+ * Optimize a parsed SVG document in-place for Figma.
+ * Operates directly on the DOM — no parse/serialize overhead.
  */
-export function optimizeForFigma(svgString) {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(svgString, 'image/svg+xml');
-  const svg = doc.documentElement;
+export function optimizeForFigmaDoc(svgDoc) {
+  const svg = svgDoc.documentElement;
 
-  // Check for parse errors
   if (svg.querySelector('parsererror')) {
     console.warn('[Element to SVG] Figma optimizer: SVG parse error, skipping optimization');
-    return svgString;
+    return;
   }
 
   stripDataAttributes(svg);
   stripTextLengthAttrs(svg);
   cleanLayerIds(svg);
   collapseGroups(svg);
-  convertUniformRadiusMasks(svg, doc);
+  convertUniformRadiusMasks(svg, svgDoc);
   normalizeToOrigin(svg);
+}
 
+/**
+ * Legacy string-based entry point — delegates to optimizeForFigmaDoc.
+ */
+export function optimizeForFigma(svgString) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(svgString, 'image/svg+xml');
+  const svg = doc.documentElement;
+
+  if (svg.querySelector('parsererror')) {
+    console.warn('[Element to SVG] Figma optimizer: SVG parse error, skipping optimization');
+    return svgString;
+  }
+
+  optimizeForFigmaDoc(doc);
   return new XMLSerializer().serializeToString(svg);
 }

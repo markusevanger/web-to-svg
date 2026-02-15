@@ -1,3 +1,11 @@
+/* Full-viewport shield — absorbs :hover so page elements don't react */
+.ets-shield {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483645;
+  cursor: default;
+}
+
 .ets-highlight {
   position: fixed;
   pointer-events: none;
@@ -33,9 +41,11 @@
 }
 
 .ets-loader-label {
-  font: 500 11px/1 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font: 500 11px/1.4 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   color: #64748b;
-  white-space: nowrap;
+  text-align: center;
+  text-wrap: balance;
+  max-width: 160px;
 }
 
 .ets-loader-track {
@@ -218,6 +228,16 @@
 
 .ets-btn-primary:active {
   background: #1d4ed8;
+}
+
+.ets-kbd {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font: 500 10px/1.4 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: rgba(255, 255, 255, 0.2);
+  opacity: 0.8;
 }
 
 .ets-btn-secondary {
@@ -444,4 +464,137 @@
   height: 0;
   position: absolute;
   opacity: 0;
+}
+
+/* ── Custom scroll-hint cursor ── */
+.ets-cursor-hidden,
+.ets-cursor-hidden * {
+  cursor: none !important;
+}
+
+.ets-scroll-cursor {
+  position: fixed;
+  z-index: 2147483647;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.15));
+}
+
+.ets-sc-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #3b82f6;
+  flex-shrink: 0;
+}
+
+.ets-sc-chevron {
+  display: block;
+  font-size: 0;
+  line-height: 0;
+  width: 0;
+  height: 0;
+  flex-shrink: 0;
+}
+
+.ets-sc-up {
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-bottom: 5px solid #3b82f6;
+  animation: ets-sc-bounce-up 1.2s ease-in-out infinite;
+}
+
+.ets-sc-down {
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid #3b82f6;
+  animation: ets-sc-bounce-down 1.2s ease-in-out infinite;
+}
+
+@keyframes ets-sc-bounce-up {
+  0%, 100% { transform: translateY(0); opacity: 0.5; }
+  50% { transform: translateY(-3px); opacity: 1; }
+}
+
+@keyframes ets-sc-bounce-down {
+  0%, 100% { transform: translateY(0); opacity: 0.5; }
+  50% { transform: translateY(3px); opacity: 1; }
+}
+
+/* ── Depth navigator (nested boxes showing DOM hierarchy) ── */
+.ets-depth-nav {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  z-index: 1;
+  background: #fff;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.ets-depth-box {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 5px;
+  padding: 0 0 3px 0;
+  position: relative;
+  transition: border-color 0.1s, background 0.1s;
+}
+
+.ets-depth-box .ets-depth-box {
+  margin: 0 4px 0 4px;
+  flex: 1;
+}
+
+.ets-depth-selected {
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.06);
+}
+
+.ets-depth-base {
+  border-style: dashed;
+}
+
+.ets-depth-label {
+  display: block;
+  font: 500 9px/1 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #94a3b8;
+  padding: 3px 5px 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
+}
+
+.ets-depth-selected > .ets-depth-label {
+  color: #3b82f6;
+  font-weight: 600;
+}
+
+.ets-depth-dots {
+  display: block;
+  font: 400 8px/1 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #94a3b8;
+  text-align: center;
+  padding: 1px 0;
+  flex-shrink: 0;
+}
+
+/* Scroll hint at bottom of depth nav */
+.ets-depth-hint {
+  display: block;
+  font: 400 8px/1 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #b0b8c4;
+  text-align: center;
+  padding: 3px 0 0;
+  flex-shrink: 0;
 }

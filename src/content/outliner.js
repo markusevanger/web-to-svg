@@ -58,7 +58,7 @@ async function collectFontFaceUrls() {
                 const cssText = await resp.text();
                 parseFontFaceRulesFromText(cssText, sheet.href, fontMap);
               }
-            } catch { /* skip this sheet */ }
+            } catch (err) { console.debug('[Element to SVG] Cross-origin sheet fetch failed:', err.message); }
           })()
         );
       }
@@ -105,11 +105,23 @@ function normalizeWeight(w) {
   return map[w.toLowerCase()] || w;
 }
 
-/** Cache loaded opentype.Font instances by URL */
+/** Module-level cache for collectFontFaceUrls() — only fetched once per page load */
+let fontFaceUrlCache = null;
+
+/** Cache loaded opentype.Font instances by URL (LRU, max 30 entries) */
+const FONT_CACHE_MAX = 30;
 const fontCache = new Map();
 
 async function loadFont(url) {
-  if (fontCache.has(url)) return fontCache.get(url);
+  if (fontCache.has(url)) {
+    const cached = fontCache.get(url);
+    // null means a previous parse failed — don't retry
+    if (cached === null) throw new Error(`Font previously failed to parse: ${url}`);
+    // Move to end (most recently used) by re-inserting
+    fontCache.delete(url);
+    fontCache.set(url, cached);
+    return cached;
+  }
   // Route through service worker to bypass CORS restrictions
   let buffer;
   try {
@@ -119,15 +131,31 @@ async function loadFont(url) {
       const resp = await fetch(dataUrl);
       buffer = await resp.arrayBuffer();
     }
-  } catch { /* fall through */ }
+  } catch (err) {
+    console.debug('[Element to SVG] Font load via SW failed:', err.message);
+  }
   if (!buffer) {
     // Fallback: direct fetch (works for same-origin fonts)
     const resp = await fetch(url);
     if (!resp.ok) throw new Error(`Font fetch failed: ${resp.status}`);
     buffer = await resp.arrayBuffer();
   }
-  const font = opentype.parse(buffer);
+  let font;
+  try {
+    font = opentype.parse(buffer);
+  } catch (err) {
+    // Cache the failure so we don't re-fetch corrupt fonts
+    fontCache.set(url, null);
+    if (fontCache.size > FONT_CACHE_MAX) {
+      fontCache.delete(fontCache.keys().next().value);
+    }
+    throw err;
+  }
   fontCache.set(url, font);
+  // Evict oldest entry if cache exceeds limit
+  if (fontCache.size > FONT_CACHE_MAX) {
+    fontCache.delete(fontCache.keys().next().value);
+  }
   return font;
 }
 
@@ -229,8 +257,27 @@ function getFontProps(textEl) {
   const weight = get('font-weight') || textEl.getAttribute('font-weight') || '400';
   const style = get('font-style') || textEl.getAttribute('font-style') || 'normal';
   const fill = get('fill') || textEl.getAttribute('fill') || '#000000';
+  const dominantBaseline = get('dominant-baseline') || textEl.getAttribute('dominant-baseline') || 'auto';
 
-  return { families, size, weight, style, fill };
+  return { families, size, weight, style, fill, dominantBaseline };
+}
+
+/**
+ * Compute the baseline y offset for an opentype.js font given the dominant-baseline.
+ * dom-to-svg uses text-after-edge (y = bottom of text) and central (y = center of em box),
+ * but opentype.js getPath() expects y = baseline.
+ */
+function adjustYForBaseline(y, fontSize, dominantBaseline, font) {
+  if (dominantBaseline === 'text-after-edge') {
+    // y is the after-edge (bottom). Baseline is above by the descent amount.
+    return y + (font.descender / font.unitsPerEm) * fontSize;
+  }
+  if (dominantBaseline === 'central') {
+    // y is the center of the em box. Baseline is below the center.
+    return y + ((font.ascender + font.descender) / 2 / font.unitsPerEm) * fontSize;
+  }
+  // 'auto', 'alphabetic', or unknown — y is already the baseline
+  return y;
 }
 
 /**
@@ -253,28 +300,26 @@ function collectTextSegments(textEl) {
 
   if (textEl.childNodes.length === 0) return segments;
 
-  // Check if there are tspan children
-  const tspans = textEl.querySelectorAll('tspan');
-  if (tspans.length > 0) {
-    for (const tspan of tspans) {
-      const text = tspan.textContent;
+  // Walk direct child nodes to handle mixed text + tspan content
+  // e.g. <text>Hello <tspan>world</tspan></text>
+  for (const child of textEl.childNodes) {
+    if (child.nodeType === Node.TEXT_NODE) {
+      const text = child.textContent;
       if (!text || !text.trim()) continue;
-      const x = tspan.hasAttribute('x') ? parseFloat(tspan.getAttribute('x')) : null;
-      const y = tspan.hasAttribute('y') ? parseFloat(tspan.getAttribute('y')) : null;
-      const dx = parseFloat(tspan.getAttribute('dx') || '0');
-      const dy = parseFloat(tspan.getAttribute('dy') || '0');
+      segments.push({ text, x: basePos.x, y: basePos.y, dx: 0, dy: 0 });
+    } else if (child.nodeType === Node.ELEMENT_NODE && child.tagName === 'tspan') {
+      const text = child.textContent;
+      if (!text || !text.trim()) continue;
+      const x = child.hasAttribute('x') ? parseFloat(child.getAttribute('x')) : null;
+      const y = child.hasAttribute('y') ? parseFloat(child.getAttribute('y')) : null;
+      const dx = parseFloat(child.getAttribute('dx') || '0');
+      const dy = parseFloat(child.getAttribute('dy') || '0');
       segments.push({
         text,
         x: x !== null ? x : basePos.x,
         y: y !== null ? y : basePos.y,
         dx, dy,
       });
-    }
-  } else {
-    // Direct text content
-    const text = textEl.textContent;
-    if (text && text.trim()) {
-      segments.push({ text, x: basePos.x, y: basePos.y, dx: 0, dy: 0 });
     }
   }
 
@@ -316,6 +361,7 @@ function rasterizeTextElement(textEl, doc) {
     // Measure text
     const measureCanvas = document.createElement('canvas');
     const mCtx = measureCanvas.getContext('2d');
+    if (!mCtx) throw new Error('Could not get canvas 2D context');
     mCtx.font = fontStr;
     const metrics = mCtx.measureText(seg.text);
 
@@ -333,6 +379,7 @@ function rasterizeTextElement(textEl, doc) {
     canvas.width = canvasW * scale;
     canvas.height = canvasH * scale;
     const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Could not get canvas 2D context');
     ctx.scale(scale, scale);
     ctx.font = fontStr;
     ctx.fillStyle = props.fill;
@@ -342,9 +389,17 @@ function rasterizeTextElement(textEl, doc) {
     const dataUrl = canvas.toDataURL('image/png');
     const image = doc.createElementNS(NS, 'image');
     image.setAttribute('href', dataUrl);
-    // Position: SVG text x/y is the baseline, so offset up by ascent
+    // Adjust y based on dominant-baseline before positioning
+    let baselineY = seg.y + seg.dy;
+    if (props.dominantBaseline === 'text-after-edge') {
+      // y is the bottom of the text box; baseline is above by descent
+      baselineY -= descent;
+    } else if (props.dominantBaseline === 'central') {
+      // y is the center of the em box; baseline is below center by ~(ascent-descent)/2
+      baselineY += (ascent - descent) / 2;
+    }
     image.setAttribute('x', (seg.x + seg.dx - pad).toString());
-    image.setAttribute('y', (seg.y + seg.dy - ascent - pad).toString());
+    image.setAttribute('y', (baselineY - ascent - pad).toString());
     image.setAttribute('width', canvasW.toString());
     image.setAttribute('height', canvasH.toString());
     g.appendChild(image);
@@ -360,16 +415,19 @@ function rasterizeTextElement(textEl, doc) {
  *   2. Fall back to canvas rasterization (reliable: uses browser's fonts)
  * Returns the modified SVG string with no <text> elements.
  */
-export async function outlineTextInSVG(svgString) {
-  const fontMap = await collectFontFaceUrls();
+/**
+ * Outline all <text> elements in a parsed SVG document (in-place).
+ * Operates directly on the DOM — no parse/serialize overhead.
+ */
+export async function outlineTextInSVGDoc(svgDoc) {
+  if (!fontFaceUrlCache) fontFaceUrlCache = await collectFontFaceUrls();
+  const fontMap = fontFaceUrlCache;
 
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(svgString, 'image/svg+xml');
-  const svgEl = doc.documentElement;
+  const svgEl = svgDoc.documentElement;
   const NS = 'http://www.w3.org/2000/svg';
 
   const textEls = [...svgEl.querySelectorAll('text')];
-  if (textEls.length === 0) return svgString;
+  if (textEls.length === 0) return;
 
   let vectorOutlined = 0;
   let rasterOutlined = 0;
@@ -386,15 +444,16 @@ export async function outlineTextInSVG(svgString) {
     if (url) {
       try {
         const font = await loadFont(url);
-        const g = doc.createElementNS(NS, 'g');
+        const g = svgDoc.createElementNS(NS, 'g');
         const transform = textEl.getAttribute('transform');
         if (transform) g.setAttribute('transform', transform);
 
         for (const seg of segments) {
-          const pathData = textToPath(font, seg.text, props.size, seg.x + seg.dx, seg.y + seg.dy);
+          const adjY = adjustYForBaseline(seg.y + seg.dy, props.size, props.dominantBaseline, font);
+          const pathData = textToPath(font, seg.text, props.size, seg.x + seg.dx, adjY);
           if (!pathData) continue;
 
-          const pathEl = doc.createElementNS(NS, 'path');
+          const pathEl = svgDoc.createElementNS(NS, 'path');
           pathEl.setAttribute('d', pathData);
           pathEl.setAttribute('fill', props.fill);
 
@@ -417,7 +476,7 @@ export async function outlineTextInSVG(svgString) {
 
     // Fallback: rasterize via canvas (browser renders with the correct font)
     if (!vectorSuccess) {
-      const replacement = rasterizeTextElement(textEl, doc);
+      const replacement = rasterizeTextElement(textEl, svgDoc);
       if (replacement) {
         textEl.parentNode.replaceChild(replacement, textEl);
         rasterOutlined++;
@@ -426,5 +485,14 @@ export async function outlineTextInSVG(svgString) {
   }
 
   console.log(`[Element to SVG] Outlined ${vectorOutlined} text(s) as vectors, ${rasterOutlined} as raster.`);
-  return new XMLSerializer().serializeToString(svgEl);
+}
+
+/**
+ * Legacy string-based entry point — delegates to outlineTextInSVGDoc.
+ */
+export async function outlineTextInSVG(svgString) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(svgString, 'image/svg+xml');
+  await outlineTextInSVGDoc(doc);
+  return new XMLSerializer().serializeToString(doc.documentElement);
 }
