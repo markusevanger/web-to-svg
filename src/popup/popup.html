@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Element to SVG</h1>
+    <p class="instructions">Click "Start Picking" then click any element on the page to export it as SVG or PNG.</p>
+    <button id="start-btn" class="primary-btn">Start Picking</button>
+    <p class="shortcut">Shortcut: <kbd>Ctrl+Shift+S</kbd></p>
+
+    <details class="settings">
+      <summary>Settings</summary>
+      <div class="settings-body">
+        <label class="checkbox-label">
+          <input type="checkbox" id="outline-text" checked>
+          Outline text (convert fonts to paths)
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" id="capture-background" checked>
+          Capture background color
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" id="optimize-figma">
+          Optimize for Figma (clean layers)
+        </label>
+        <label>
+          Filename pattern
+          <input type="text" id="filename-pattern" placeholder="{tagName}-{width}x{height}">
+        </label>
+        <fieldset>
+          <legend>PNG scale</legend>
+          <label><input type="radio" name="png-scale" value="1"> 1x</label>
+          <label><input type="radio" name="png-scale" value="2" checked> 2x</label>
+          <label><input type="radio" name="png-scale" value="3"> 3x</label>
+        </fieldset>
+      </div>
+    </details>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
