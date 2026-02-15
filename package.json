@@ -1,23 +1,15 @@
 {
   "name": "svg-picker",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "private": true,
+  "packageManager": "pnpm@10.28.0",
   "scripts": {
-    "icons": "node scripts/generate-icons.mjs",
-    "build": "node esbuild.config.mjs",
-    "dev": "npm run icons && npm run build"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "dependencies": {
-    "dom-to-svg": "^0.12.2",
-    "opentype.js": "^1.3.4"
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "dev:extension": "pnpm --filter @svg-picker/extension dev",
+    "dev:web": "pnpm --filter @svg-picker/web dev",
+    "dev:studio": "pnpm --filter @svg-picker/studio dev"
   },
   "devDependencies": {
-    "esbuild": "^0.27.3",
-    "sharp": "^0.34.5"
+    "turbo": "^2"
   }
 }
