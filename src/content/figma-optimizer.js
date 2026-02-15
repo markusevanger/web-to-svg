@@ -192,6 +192,74 @@ function convertUniformRadiusMasks(root, doc) {
 }
 
 /**
+ * Replace <g mask="..."> wrappers around lone <image> elements with a
+ * lightweight <clipPath> on the image itself. This produces a clean
+ * "image + rounded-rect clip" that Figma imports as a native shape
+ * instead of a complex mask group with stacking layers.
+ *
+ * Runs after convertUniformRadiusMasks so uniform-radius masks are
+ * already <rect rx ry>.
+ */
+function simplifyMaskedImages(root, doc) {
+  const NS = 'http://www.w3.org/2000/svg';
+  const maskedGroups = Array.from(root.querySelectorAll('g[mask]'));
+
+  for (const g of maskedGroups) {
+    if (g.closest('defs')) continue;
+
+    // Only target groups whose sole child is an <image>
+    const children = Array.from(g.children);
+    if (children.length !== 1 || children[0].tagName !== 'image') continue;
+    const image = children[0];
+
+    // Extract mask ID
+    const maskAttr = g.getAttribute('mask');
+    const maskMatch = maskAttr.match(/url\(#([^)]+)\)/);
+    if (!maskMatch) continue;
+    const maskId = maskMatch[1];
+
+    // Ensure no other element shares this mask
+    const refs = root.querySelectorAll(`[mask="url(#${CSS.escape(maskId)})"]`);
+    if (Array.from(refs).some((el) => el !== g)) continue;
+
+    // Find the <mask> in <defs>
+    const mask = root.querySelector(`defs mask#${CSS.escape(maskId)}`);
+    if (!mask) continue;
+
+    // Mask must contain a single shape (rect or path)
+    const shapes = Array.from(mask.children);
+    if (shapes.length !== 1) continue;
+    const shape = shapes[0];
+    if (shape.tagName !== 'rect' && shape.tagName !== 'path') continue;
+
+    // Build a <clipPath> from the mask shape
+    const clipId = maskId.replace(/^mask-/, 'clip-') || `clip-${maskId}`;
+    const clipPath = doc.createElementNS(NS, 'clipPath');
+    clipPath.setAttribute('id', clipId);
+    const clipShape = shape.cloneNode(true);
+    clipShape.removeAttribute('fill');
+    clipPath.appendChild(clipShape);
+
+    // Swap: add clipPath, remove mask
+    mask.parentNode.appendChild(clipPath);
+    mask.remove();
+
+    // Apply clip-path directly on the <image>
+    image.setAttribute('clip-path', `url(#${clipId})`);
+    g.removeAttribute('mask');
+
+    // Unwrap the now-attribute-less group, merging transform if needed
+    const gTransform = g.getAttribute('transform');
+    if (gTransform) {
+      const imgTransform = image.getAttribute('transform');
+      image.setAttribute('transform', imgTransform ? `${gTransform} ${imgTransform}` : gTransform);
+    }
+    mergeAttributes(image, g);
+    g.replaceWith(image);
+  }
+}
+
+/**
  * Shift all absolute coordinates so the SVG content starts at 0,0.
  * Updates the viewBox and translates the root content group.
  */
@@ -234,6 +302,7 @@ export function optimizeForFigmaDoc(svgDoc) {
   cleanLayerIds(svg);
   collapseGroups(svg);
   convertUniformRadiusMasks(svg, svgDoc);
+  simplifyMaskedImages(svg, svgDoc);
   normalizeToOrigin(svg);
 }
 

@@ -10,8 +10,8 @@
   position: fixed;
   pointer-events: none;
   z-index: 2147483646;
-  background: rgba(59, 130, 246, 0.15);
-  border: 2px solid rgb(59, 130, 246);
+  background: rgba(255, 102, 47, 0.15);
+  border: 2px solid #FF662F;
   border-radius: 2px;
   transition: top 0.05s ease, left 0.05s ease, width 0.05s ease, height 0.05s ease;
 }
@@ -59,7 +59,7 @@
 .ets-loader-bar {
   width: 0%;
   height: 100%;
-  background: rgb(59, 130, 246);
+  background: #FF662F;
   border-radius: 3px;
 }
 
@@ -78,26 +78,62 @@
   50% { opacity: 0.5; }
 }
 
-/* Hover state — full checkered preview */
+/* Hover state — dot pattern preview */
 .ets-preview {
   position: fixed;
   z-index: 2147483647;
   width: 200px;
   height: 160px;
   background-color: #fff;
-  background-image:
-    linear-gradient(45deg, #e2e8f0 25%, transparent 25%),
-    linear-gradient(-45deg, #e2e8f0 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, #e2e8f0 75%),
-    linear-gradient(-45deg, transparent 75%, #e2e8f0 75%);
-  background-size: 16px 16px;
-  background-position: 0 0, 0 8px, 8px -8px, -8px 0;
-  border: 2px solid rgb(59, 130, 246);
+  background-image: radial-gradient(circle, #d1d5db 1px, transparent 1px);
+  background-size: 12px 12px;
+  border: 2px solid #FF662F;
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
   pointer-events: none;
   overflow: hidden;
   animation: ets-preview-in 0.15s ease-out;
+
+  /* Primary orange */
+  --ets-primary-50: #FFF3ED;
+  --ets-primary-100: #FFE4D6;
+  --ets-primary-200: #FFC4A8;
+  --ets-primary-300: #FFA070;
+  --ets-primary-400: #FF7F42;
+  --ets-primary-500: #FF662F;
+  --ets-primary-600: #E8531F;
+  --ets-primary-700: #C04012;
+  --ets-primary-800: #993310;
+  --ets-primary-900: #7A2B0F;
+
+  /* Neutral grays */
+  --ets-gray-50: #f8fafc;
+  --ets-gray-100: #f1f5f9;
+  --ets-gray-200: #e2e8f0;
+  --ets-gray-300: #cbd5e1;
+  --ets-gray-400: #94a3b8;
+  --ets-gray-500: #64748b;
+  --ets-gray-600: #475569;
+  --ets-gray-700: #334155;
+  --ets-gray-800: #1e293b;
+
+  /* Semantic tokens */
+  --ets-color-bg: #fff;
+  --ets-color-bg-muted: var(--ets-gray-100);
+  --ets-color-bg-subtle: var(--ets-gray-50);
+  --ets-color-text: var(--ets-gray-800);
+  --ets-color-text-muted: var(--ets-gray-500);
+  --ets-color-text-subtle: var(--ets-gray-400);
+  --ets-color-border: var(--ets-gray-200);
+  --ets-color-primary: var(--ets-primary-500);
+  --ets-color-primary-hover: var(--ets-primary-600);
+  --ets-color-primary-active: var(--ets-primary-700);
+  --ets-color-primary-light: var(--ets-primary-50);
+  --ets-color-primary-shadow: rgba(255, 102, 47, 0.2);
+
+  --ets-radius-card: 26px;
+  --ets-radius-inner: 20px;
+  --ets-radius-btn: 999px;
 }
 
 .ets-preview img {
@@ -109,43 +145,37 @@
   to { opacity: 1; transform: scale(1); }
 }
 
-/* Pinned state — white container with checkered thumb inside */
+/* Pinned state — white container with dot pattern thumb inside */
 .ets-preview.ets-preview-pinned {
   position: fixed;
   pointer-events: auto;
   width: 480px;
   height: auto;
-  max-height: calc(100vh - 16px);
-  padding: 0;
+  padding: 6px;
   display: flex;
   flex-direction: column;
   cursor: default;
   overflow-y: auto;
   overflow-x: hidden;
-  /* Plain white background — checkered is on .ets-thumb only */
-  background-color: #fff;
+  /* Plain white background — dot pattern is on .ets-thumb only */
+  background-color: var(--ets-color-bg);
   background-image: none;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
+  border: 1px solid var(--ets-color-border);
+  border-radius: var(--ets-radius-card);
 }
 
-/* Checkered thumbnail area */
+/* Dot pattern thumbnail area */
 .ets-thumb {
   background-color: #fff;
-  background-image:
-    linear-gradient(45deg, #f1f5f9 25%, transparent 25%),
-    linear-gradient(-45deg, #f1f5f9 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, #f1f5f9 75%),
-    linear-gradient(-45deg, transparent 75%, #f1f5f9 75%);
-  background-size: 16px 16px;
-  background-position: 0 0, 0 8px, 8px -8px, -8px 0;
-  border-bottom: 1px solid #e2e8f0;
-  border-radius: 9px 9px 0 0;
+  background-image: radial-gradient(circle, #d1d5db 1px, transparent 1px);
+  background-size: 12px 12px;
+  border-radius: var(--ets-radius-inner) var(--ets-radius-inner) 0 0;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 80px;
+  position: relative;
 }
 
 .ets-thumb-loading {
@@ -158,26 +188,41 @@
   width: calc(100% - 24px);
   max-height: 360px;
   object-fit: contain;
-  margin: 12px;
+  margin: 12px 12px 28px;
 }
 
-.ets-info {
-  font: 11px/1.4 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  color: #64748b;
-  padding: 10px 14px 8px;
-  animation: ets-actions-in 0.2s ease-out;
+.ets-header {
+  padding: 10px 14px 4px;
+  font: 600 12px/1.4 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--ets-color-text);
 }
 
-.ets-info strong {
-  color: #1e293b;
-  font-weight: 600;
+.ets-header-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.ets-header-link:hover {
+  color: var(--ets-color-primary);
+}
+
+.ets-size-badge {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font: 500 10px/1.4 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  pointer-events: none;
+  backdrop-filter: blur(4px);
 }
 
 .ets-actions {
-  background: #f8fafc;
-  border-top: 1px solid #e2e8f0;
+  background: var(--ets-color-bg-subtle);
   padding: 12px 14px;
-  border-radius: 0 0 9px 9px;
+  border-radius: 0 0 var(--ets-radius-inner) var(--ets-radius-inner);
   animation: ets-actions-in 0.25s ease-out;
 }
 
@@ -194,10 +239,10 @@
 
 .ets-btn {
   padding: 7px 12px;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
+  border: 1px solid var(--ets-color-border);
+  border-radius: var(--ets-radius-btn);
   background: white;
-  color: #334155;
+  color: var(--ets-gray-700);
   font: 500 12px/1 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   cursor: pointer;
   white-space: nowrap;
@@ -206,28 +251,28 @@
 }
 
 .ets-btn:hover {
-  background: #f1f5f9;
-  border-color: #cbd5e1;
+  background: var(--ets-color-bg-muted);
+  border-color: var(--ets-gray-300);
 }
 
 .ets-btn:active {
-  background: #e2e8f0;
+  background: var(--ets-color-border);
 }
 
 .ets-btn-primary {
-  background: #3b82f6;
+  background: var(--ets-color-primary);
   color: white;
-  border-color: #3b82f6;
-  box-shadow: 0 1px 2px rgba(59, 130, 246, 0.2);
+  border-color: var(--ets-color-primary);
+  box-shadow: 0 1px 2px var(--ets-color-primary-shadow);
 }
 
 .ets-btn-primary:hover {
-  background: #2563eb;
-  border-color: #2563eb;
+  background: var(--ets-color-primary-hover);
+  border-color: var(--ets-color-primary-hover);
 }
 
 .ets-btn-primary:active {
-  background: #1d4ed8;
+  background: var(--ets-color-primary-active);
 }
 
 .ets-kbd {
@@ -241,13 +286,13 @@
 }
 
 .ets-btn-secondary {
-  background: #fff;
-  color: #334155;
-  border-color: #cbd5e1;
+  background: transparent;
+  color: var(--ets-gray-800);
+  border-color: var(--ets-gray-800);
 }
 
 .ets-btn-secondary:hover {
-  background: #f1f5f9;
+  background: var(--ets-color-bg-muted);
 }
 
 /* Card-level close button (top-right corner) */
@@ -263,9 +308,9 @@
   justify-content: center;
   padding: 0;
   border: none;
-  border-radius: 6px;
+  border-radius: 50%;
   background: rgba(255, 255, 255, 0.85);
-  color: #94a3b8;
+  color: var(--ets-color-text-subtle);
   font-size: 14px;
   line-height: 1;
   cursor: pointer;
@@ -274,8 +319,8 @@
 }
 
 .ets-btn-card-close:hover {
-  background: #e2e8f0;
-  color: #475569;
+  background: var(--ets-color-border);
+  color: var(--ets-gray-600);
 }
 
 /* Split button */
@@ -285,16 +330,16 @@
 }
 
 .ets-split-main {
-  border-radius: 6px 0 0 6px;
+  border-radius: 999px 0 0 999px;
   border-right: 1px solid rgba(255,255,255,0.2);
 }
 
 .ets-btn-secondary.ets-split-main {
-  border-right-color: #cbd5e1;
+  border-right-color: var(--ets-gray-800);
 }
 
 .ets-split-toggle {
-  border-radius: 0 6px 6px 0;
+  border-radius: 0 999px 999px 0;
   padding: 7px 7px;
   font-size: 10px;
   line-height: 1;
@@ -309,8 +354,8 @@
   margin-bottom: 4px;
   min-width: 140px;
   background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
+  border: 1px solid var(--ets-color-border);
+  border-radius: 16px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.12);
   z-index: 1;
   overflow: hidden;
@@ -332,7 +377,7 @@
   padding: 8px 12px;
   border: none;
   background: none;
-  color: #334155;
+  color: var(--ets-gray-700);
   font: 400 12px/1.3 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   cursor: pointer;
   text-align: left;
@@ -341,29 +386,80 @@
 }
 
 .ets-dropdown-item:hover {
-  background: #f1f5f9;
+  background: var(--ets-color-bg-muted);
 }
 
 .ets-dropdown-item + .ets-dropdown-item {
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid var(--ets-color-bg-muted);
 }
 
-/* Options panel */
+/* Options panel — collapsible */
 .ets-options {
   margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid #e2e8f0;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
+  background: var(--ets-color-bg-muted);
+  border-radius: 16px;
 }
 
-.ets-options-title {
-  font: 600 10px/1 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  color: #94a3b8;
+.ets-options-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font: 600 11px/1 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--ets-color-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  margin-bottom: 8px;
+  border-radius: 16px;
+  transition: color 0.12s;
+}
+
+.ets-options-toggle:hover {
+  color: var(--ets-color-text);
+}
+
+.ets-options-cog {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.ets-options-chevron {
+  margin-left: auto;
+  font-size: 10px;
+  transition: transform 0.2s;
+}
+
+.ets-options-open .ets-options-chevron {
+  transform: rotate(180deg);
+}
+
+.ets-options-body {
+  display: none;
+  padding: 0 12px 10px;
+}
+
+.ets-options-open .ets-options-body {
+  display: block;
+  animation: ets-options-expand 0.15s ease-out;
+}
+
+@keyframes ets-options-expand {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.ets-option-item {
+  padding: 4px 0;
+}
+
+.ets-option-desc {
+  font: 400 11px/1.3 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--ets-color-text-subtle);
+  margin-left: 23px;
+  padding-bottom: 2px;
 }
 
 .ets-option-label {
@@ -371,15 +467,15 @@
   align-items: center;
   gap: 8px;
   font: 400 12px/1.3 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  color: #475569;
+  color: var(--ets-gray-600);
   cursor: pointer;
-  padding: 5px 0;
+  padding: 0;
   border-radius: 4px;
   transition: color 0.1s;
 }
 
 .ets-option-label:hover {
-  color: #1e293b;
+  color: var(--ets-color-text);
 }
 
 .ets-option-label input[type="checkbox"] {
@@ -388,7 +484,7 @@
   margin: 0;
   width: 15px;
   height: 15px;
-  border: 1.5px solid #cbd5e1;
+  border: 1.5px solid var(--ets-gray-300);
   border-radius: 4px;
   background: #fff;
   cursor: pointer;
@@ -398,8 +494,8 @@
 }
 
 .ets-option-label input[type="checkbox"]:checked {
-  background: #3b82f6;
-  border-color: #3b82f6;
+  background: var(--ets-color-primary);
+  border-color: var(--ets-color-primary);
 }
 
 .ets-option-label input[type="checkbox"]:checked::after {
@@ -425,7 +521,7 @@
 
 .ets-option-fieldset legend {
   font: 500 12px/1.3 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  color: #475569;
+  color: var(--ets-gray-600);
   float: left;
   margin-right: 10px;
   padding: 0;
@@ -436,23 +532,23 @@
   align-items: center;
   gap: 0;
   font: 400 12px/1 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  color: #475569;
+  color: var(--ets-gray-600);
   cursor: pointer;
   padding: 4px 10px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--ets-color-border);
   border-radius: 5px;
   background: #fff;
   transition: background 0.12s, border-color 0.12s, color 0.12s;
 }
 
 .ets-option-radio:hover {
-  background: #f1f5f9;
+  background: var(--ets-color-bg-muted);
 }
 
 .ets-option-radio:has(input:checked) {
-  background: #eff6ff;
-  border-color: #3b82f6;
-  color: #1d4ed8;
+  background: var(--ets-color-primary-light);
+  border-color: var(--ets-color-primary);
+  color: var(--ets-color-primary-active);
   font-weight: 500;
 }
 
@@ -488,7 +584,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #3b82f6;
+  background: #FF662F;
   flex-shrink: 0;
 }
 
@@ -504,14 +600,14 @@
 .ets-sc-up {
   border-left: 4px solid transparent;
   border-right: 4px solid transparent;
-  border-bottom: 5px solid #3b82f6;
+  border-bottom: 5px solid #FF662F;
   animation: ets-sc-bounce-up 1.2s ease-in-out infinite;
 }
 
 .ets-sc-down {
   border-left: 4px solid transparent;
   border-right: 4px solid transparent;
-  border-top: 5px solid #3b82f6;
+  border-top: 5px solid #FF662F;
   animation: ets-sc-bounce-down 1.2s ease-in-out infinite;
 }
 
@@ -543,7 +639,7 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  border: 1.5px solid #e2e8f0;
+  border: 1.5px solid var(--ets-color-border);
   border-radius: 5px;
   padding: 0 0 3px 0;
   position: relative;
@@ -556,8 +652,8 @@
 }
 
 .ets-depth-selected {
-  border-color: #3b82f6;
-  background: rgba(59, 130, 246, 0.06);
+  border-color: #FF662F;
+  background: rgba(255, 102, 47, 0.06);
 }
 
 .ets-depth-base {
@@ -567,7 +663,7 @@
 .ets-depth-label {
   display: block;
   font: 500 9px/1 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  color: #94a3b8;
+  color: var(--ets-color-text-subtle);
   padding: 3px 5px 1px;
   white-space: nowrap;
   overflow: hidden;
@@ -576,14 +672,14 @@
 }
 
 .ets-depth-selected > .ets-depth-label {
-  color: #3b82f6;
+  color: #FF662F;
   font-weight: 600;
 }
 
 .ets-depth-dots {
   display: block;
   font: 400 8px/1 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  color: #94a3b8;
+  color: var(--ets-color-text-subtle);
   text-align: center;
   padding: 1px 0;
   flex-shrink: 0;

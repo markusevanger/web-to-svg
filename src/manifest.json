@@ -20,14 +20,5 @@
   },
   "background": {
     "service_worker": "background/service-worker.js"
-  },
-  "commands": {
-    "toggle-picker": {
-      "suggested_key": {
-        "default": "Ctrl+Shift+S",
-        "mac": "Command+Shift+S"
-      },
-      "description": "Toggle element picker"
-    }
   }
 }

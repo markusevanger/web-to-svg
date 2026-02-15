@@ -148,6 +148,7 @@ import contentCSS from './content.css';
     previewAbort = null;
     cachedSvgString = null;
     hideScrollCursor();
+    stopPreviewResizeObserver();
     loader.style.display = 'none';
     loaderLabel.textContent = 'Processing\u2026';
     loaderBar.style.display = '';
@@ -155,6 +156,7 @@ import contentCSS from './content.css';
     depthNav.style.display = 'none';
     depthNav.innerHTML = '';
     preview.style.display = 'none';
+    preview.style.maxHeight = '';
     preview.classList.remove('ets-preview-pinned');
     // Remove everything except the loader and depth nav
     for (const child of [...preview.children]) {
@@ -205,31 +207,59 @@ import contentCSS from './content.css';
     preview.style.top = top + 'px';
   }
 
+  let previewResizeObserver = null;
+  let clamping = false;
+
   function clampPreviewToViewport() {
-    // Wait one frame so the pinned layout has been applied and we can measure
-    requestAnimationFrame(() => {
-      const margin = 8;
-      const rect = preview.getBoundingClientRect();
-      let left = rect.left;
-      let top = rect.top;
+    if (clamping) return;
+    clamping = true;
 
-      if (rect.right > window.innerWidth - margin) {
-        left = window.innerWidth - margin - rect.width;
-      }
-      if (rect.bottom > window.innerHeight - margin) {
-        top = window.innerHeight - margin - rect.height;
-      }
-      if (left < margin) left = margin;
-      if (top < margin) top = margin;
+    const margin = 20;
 
-      // If the panel is taller than the viewport, pin to top
-      if (rect.height > window.innerHeight - margin * 2) {
-        top = margin;
-      }
+    // Temporarily remove max-height so we can measure natural height
+    const prevMaxH = preview.style.maxHeight;
+    preview.style.maxHeight = 'none';
+    const rect = preview.getBoundingClientRect();
 
-      preview.style.left = left + 'px';
-      preview.style.top = top + 'px';
+    let left = rect.left;
+    let top = rect.top;
+    const cardW = rect.width;
+    const cardH = rect.height;
+
+    // Clamp horizontally
+    if (left + cardW > window.innerWidth - margin) {
+      left = window.innerWidth - margin - cardW;
+    }
+    if (left < margin) left = margin;
+
+    // Clamp vertically — try to move up first, then cap height for whatever remains
+    if (top + cardH > window.innerHeight - margin) {
+      top = window.innerHeight - margin - cardH;
+    }
+    if (top < margin) top = margin;
+
+    const availableH = window.innerHeight - top - margin;
+
+    preview.style.left = left + 'px';
+    preview.style.top = top + 'px';
+    preview.style.maxHeight = availableH + 'px';
+
+    clamping = false;
+  }
+
+  function startPreviewResizeObserver() {
+    if (previewResizeObserver) return;
+    previewResizeObserver = new ResizeObserver(() => {
+      if (pinned) clampPreviewToViewport();
     });
+    previewResizeObserver.observe(preview);
+  }
+
+  function stopPreviewResizeObserver() {
+    if (previewResizeObserver) {
+      previewResizeObserver.disconnect();
+      previewResizeObserver = null;
+    }
   }
 
   function makeSplitBtn(label, primaryClass, primaryHandler, items, shortcutHint) {
@@ -288,12 +318,22 @@ import contentCSS from './content.css';
     const panel = document.createElement('div');
     panel.className = 'ets-options';
 
-    const title = document.createElement('div');
-    title.className = 'ets-options-title';
-    title.textContent = 'Options';
-    panel.appendChild(title);
+    const toggle = document.createElement('button');
+    toggle.className = 'ets-options-toggle';
+    toggle.innerHTML = '<span class="ets-options-cog">&#9881;</span><span>Options</span><span class="ets-options-chevron">&#9662;</span>';
+    panel.appendChild(toggle);
 
-    function makeCheckbox(id, label, checked, storageKey) {
+    const body = document.createElement('div');
+    body.className = 'ets-options-body';
+    panel.appendChild(body);
+
+    toggle.addEventListener('click', () => {
+      panel.classList.toggle('ets-options-open');
+    });
+
+    function makeCheckbox(id, label, description, checked, storageKey) {
+      const wrap = document.createElement('div');
+      wrap.className = 'ets-option-item';
       const lbl = document.createElement('label');
       lbl.className = 'ets-option-label';
       const input = document.createElement('input');
@@ -305,10 +345,19 @@ import contentCSS from './content.css';
       });
       lbl.appendChild(input);
       lbl.appendChild(document.createTextNode(' ' + label));
-      panel.appendChild(lbl);
+      wrap.appendChild(lbl);
+      if (description) {
+        const desc = document.createElement('div');
+        desc.className = 'ets-option-desc';
+        desc.textContent = description;
+        wrap.appendChild(desc);
+      }
+      body.appendChild(wrap);
     }
 
-    function makeRadioGroup(legend, name, options, current, onChange) {
+    function makeRadioGroup(legend, name, options, current, onChange, description) {
+      const wrap = document.createElement('div');
+      wrap.className = 'ets-option-item';
       const fs = document.createElement('fieldset');
       fs.className = 'ets-option-fieldset';
       const leg = document.createElement('legend');
@@ -327,15 +376,22 @@ import contentCSS from './content.css';
         lbl.appendChild(document.createTextNode(' ' + val + 'x'));
         fs.appendChild(lbl);
       }
-      panel.appendChild(fs);
+      wrap.appendChild(fs);
+      if (description) {
+        const desc = document.createElement('div');
+        desc.className = 'ets-option-desc';
+        desc.textContent = description;
+        wrap.appendChild(desc);
+      }
+      body.appendChild(wrap);
     }
 
-    makeCheckbox('outline-text', 'Outline text', settings.outlineText, 'outlineText');
-    makeCheckbox('capture-bg', 'Capture background', settings.captureBackground, 'captureBackground');
-    makeCheckbox('optimize-figma', 'Optimize for Figma', settings.optimizeForFigma, 'optimizeForFigma');
+    makeCheckbox('outline-text', 'Outline text', 'Convert text to vector paths so fonts render everywhere', settings.outlineText, 'outlineText');
+    makeCheckbox('capture-bg', 'Capture background', 'Include the element\u2019s background color in the export', settings.captureBackground, 'captureBackground');
+    makeCheckbox('optimize-figma', 'Optimize for Figma', 'Simplify groups and paths for cleaner Figma imports', settings.optimizeForFigma, 'optimizeForFigma');
     makeRadioGroup('PNG scale', 'ets-png-scale', ['1', '2', '3'], settings.pngScale, (v) => {
       chrome.storage.sync.set({ pngScale: v });
-    });
+    }, 'Multiplier for PNG export resolution');
 
     return panel;
   }
@@ -391,27 +447,36 @@ import contentCSS from './content.css';
     closeBtn.addEventListener('click', cleanup);
     preview.appendChild(closeBtn);
 
+    const header = document.createElement('div');
+    header.className = 'ets-header';
+    const headerLink = document.createElement('a');
+    headerLink.href = 'https://webtosvg.com';
+    headerLink.target = '_blank';
+    headerLink.rel = 'noopener';
+    headerLink.className = 'ets-header-link';
+    headerLink.textContent = 'webtosvg.com';
+    header.appendChild(headerLink);
+
     const img = preview.querySelector('img');
+    // Insert header before the img so it's the topmost visible element
+    preview.insertBefore(header, img || loader);
+
+    const rect = element.getBoundingClientRect();
+    const tag = element.tagName.toLowerCase();
+    const w = Math.round(rect.width);
+    const h = Math.round(rect.height);
+
     if (img) {
       const thumb = document.createElement('div');
       thumb.className = 'ets-thumb';
       preview.insertBefore(thumb, img);
       thumb.appendChild(img);
+
+      const badge = document.createElement('span');
+      badge.className = 'ets-size-badge';
+      badge.textContent = `${w}\u00D7${h}`;
+      thumb.appendChild(badge);
     }
-
-    // Element info
-    const rect = element.getBoundingClientRect();
-    const tag = element.tagName.toLowerCase();
-    const w = Math.round(rect.width);
-    const h = Math.round(rect.height);
-    const cls = element.className && typeof element.className === 'string'
-      ? '.' + element.className.trim().split(/\s+/)[0]
-      : '';
-
-    const info = document.createElement('div');
-    info.className = 'ets-info';
-    info.innerHTML = `<strong>&lt;${tag}${cls}&gt;</strong> &mdash; ${w} &times; ${h}px`;
-    preview.appendChild(info);
 
     // Actions area
     const actions = document.createElement('div');
@@ -481,8 +546,11 @@ import contentCSS from './content.css';
       // Options panel — reconvert on settings change
       actions.appendChild(buildOptionsPanel(settings, reconvert));
 
-      // Clamp position to viewport now that all content is built
-      clampPreviewToViewport();
+      // Clamp position to viewport now and whenever the card resizes (e.g. options toggle)
+      requestAnimationFrame(() => {
+        clampPreviewToViewport();
+        startPreviewResizeObserver();
+      });
     });
 
     preview.appendChild(actions);

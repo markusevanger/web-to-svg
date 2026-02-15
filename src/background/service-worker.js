@@ -20,12 +20,6 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   }
 });
 
-chrome.commands.onCommand.addListener((command, tab) => {
-  if (command === 'toggle-picker' && tab?.id) {
-    injectContentScript(tab.id);
-  }
-});
-
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'start-picker') {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
