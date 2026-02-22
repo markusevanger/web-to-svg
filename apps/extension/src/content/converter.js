@@ -324,7 +324,7 @@ async function collectElementMetadata(root) {
             el.src = dataUrl;
             el.srcset = '';
             restorers.push(() => { el.src = origSrc; el.srcset = origSrcset; });
-          } catch (err) { console.debug('[Element to SVG] Image inline failed:', err.message); }
+          } catch (err) { console.debug('[Web to SVG] Image inline failed:', err.message); }
         })());
       }
     }
@@ -341,7 +341,7 @@ async function collectElementMetadata(root) {
             const origBg = el.style.backgroundImage;
             el.style.backgroundImage = bg.replace(urlMatch[0], `url("${dataUrl}")`);
             restorers.push(() => { el.style.backgroundImage = origBg; });
-          } catch (err) { console.debug('[Element to SVG] Background image inline failed:', err.message); }
+          } catch (err) { console.debug('[Web to SVG] Background image inline failed:', err.message); }
         })());
       }
     }
@@ -563,7 +563,7 @@ export async function convertElementToSVG(element) {
       });
     });
   } catch (err) {
-    console.warn('[Element to SVG] Could not read settings, using defaults:', err);
+    console.warn('[Web to SVG] Could not read settings, using defaults:', err);
     settings = { outlineText: true, captureBackground: true, optimizeForFigma: false };
   }
 
@@ -671,7 +671,7 @@ export async function convertElementToSVG(element) {
       try {
         await outlineTextInSVGDoc(svgDocument);
       } catch (err) {
-        console.warn('[Element to SVG] Text outlining failed, returning un-outlined SVG:', err);
+        console.warn('[Web to SVG] Text outlining failed, returning un-outlined SVG:', err);
       }
     }
 
@@ -680,7 +680,7 @@ export async function convertElementToSVG(element) {
       try {
         optimizeForFigmaDoc(svgDocument);
       } catch (err) {
-        console.warn('[Element to SVG] Figma optimization failed, returning unoptimized SVG:', err);
+        console.warn('[Web to SVG] Figma optimization failed, returning unoptimized SVG:', err);
       }
     }
 
@@ -700,7 +700,7 @@ export async function convertElementToSVG(element) {
     try {
       await outlineTextInSVGDoc(svgDoc);
     } catch (err) {
-      console.warn('[Element to SVG] Text outlining failed, returning un-outlined SVG:', err);
+      console.warn('[Web to SVG] Text outlining failed, returning un-outlined SVG:', err);
     }
   }
 
@@ -708,7 +708,7 @@ export async function convertElementToSVG(element) {
     try {
       optimizeForFigmaDoc(svgDoc);
     } catch (err) {
-      console.warn('[Element to SVG] Figma optimization failed, returning unoptimized SVG:', err);
+      console.warn('[Web to SVG] Figma optimization failed, returning unoptimized SVG:', err);
     }
   }
 

@@ -3,11 +3,11 @@ import contentCSS from './content.css';
 
 (function () {
   // Toggle guard — if already active, deactivate
-  if (window.__elementToSvgActive) {
-    window.__elementToSvgCleanup?.();
+  if (window.__webToSvgActive) {
+    window.__webToSvgCleanup?.();
     return;
   }
-  window.__elementToSvgActive = true;
+  window.__webToSvgActive = true;
 
   // Inject styles
   const styleEl = document.createElement('style');
@@ -107,12 +107,12 @@ import contentCSS from './content.css';
       bottom: '24px',
       left: '50%',
       transform: 'translateX(-50%)',
-      background: '#1e293b',
+      background: '#1b1d27',
       color: 'white',
       padding: '8px 16px',
       borderRadius: '6px',
       fontSize: '13px',
-      fontFamily: 'sans-serif',
+      fontFamily: "'Spline Sans Mono', monospace",
       zIndex: '2147483647',
       pointerEvents: 'none',
       transition: 'opacity 0.3s',
@@ -171,8 +171,8 @@ import contentCSS from './content.css';
       document.removeEventListener('click', preview._docClickHandler, true);
       preview._docClickHandler = null;
     }
-    window.__elementToSvgActive = false;
-    window.__elementToSvgCleanup = undefined;
+    window.__webToSvgActive = false;
+    window.__webToSvgCleanup = undefined;
     document.removeEventListener('mousemove', onMouseMove, true);
     document.removeEventListener('wheel', onWheel, true);
     document.removeEventListener('click', onClick, true);
@@ -186,7 +186,7 @@ import contentCSS from './content.css';
     styleEl.remove();
   }
 
-  window.__elementToSvgCleanup = cleanup;
+  window.__webToSvgCleanup = cleanup;
 
   function isOwnElement(el) {
     return el === shield || el === highlight || el === tooltip || el === preview ||
@@ -555,6 +555,25 @@ import contentCSS from './content.css';
 
     preview.appendChild(actions);
 
+    // Footer
+    const footer = document.createElement('div');
+    footer.className = 'ets-footer';
+    const footerLeft = document.createElement('a');
+    footerLeft.href = 'https://webtosvg.com';
+    footerLeft.target = '_blank';
+    footerLeft.rel = 'noopener';
+    footerLeft.className = 'ets-footer-link';
+    footerLeft.textContent = '\u00A9 webtosvg.com';
+    const footerRight = document.createElement('a');
+    footerRight.href = 'https://markusevanger.no';
+    footerRight.target = '_blank';
+    footerRight.rel = 'noopener';
+    footerRight.className = 'ets-footer-link';
+    footerRight.textContent = 'By markusevanger.no';
+    footer.appendChild(footerLeft);
+    footer.appendChild(footerRight);
+    preview.appendChild(footer);
+
     // Click outside to close; also close open dropdowns on interior clicks
     const onDocClick = (e) => {
       if (!preview.contains(e.target)) {
@@ -782,7 +801,7 @@ import contentCSS from './content.css';
         loaderBar.classList.remove('ets-loader-bar-pulse');
         showScrollCursor();
       } catch (err) {
-        console.warn('[Element to SVG] Preview conversion failed:', err);
+        console.warn('[Web to SVG] Preview conversion failed:', err);
         loader.style.display = 'none';
         loaderBar.classList.remove('ets-loader-bar-pulse');
       }
@@ -936,7 +955,7 @@ import contentCSS from './content.css';
       preview.insertBefore(img, loader);
       pinPreview(element, svgString);
     } catch (err) {
-      console.error('[Element to SVG] Conversion failed:', err);
+      console.error('[Web to SVG] Conversion failed:', err);
       showToast('SVG conversion failed: ' + err.message);
       cleanup();
     }

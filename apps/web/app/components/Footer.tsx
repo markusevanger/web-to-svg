@@ -1,27 +1,64 @@
+import Image from "next/image";
+import Link from "next/link";
+import ButtonGroup from "@/app/components/ButtonGroup";
+
 export default function Footer() {
   return (
-    <footer className="bg-gray-50 relative">
-      <div className="absolute inset-0 bg-[url(/images/tile-grid-black.png)] bg-size-[17px] opacity-20 bg-position-[0_1]" />
-      <div className="container relative">
-        <div className="flex flex-col items-center py-28 lg:flex-row">
-          <h3 className="mb-10 text-center text-4xl font-mono leading-tight tracking-tighter lg:mb-0 lg:w-1/2 lg:pr-4 lg:text-left lg:text-2xl">
-            Built with Sanity + Next.js.
-          </h3>
-          <div className="flex flex-col gap-3 items-center justify-center lg:w-1/2 lg:flex-row lg:pl-4">
+    <footer className="mt-24 px-6 lg:px-28 pb-8">
+      <div className="bg-white rounded-xl border border-gray-200 px-6 lg:px-12 py-12">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+          <div className="flex flex-col gap-3">
+            <Link href="/" className="flex items-center gap-2">
+              <Image
+                src="/images/webtosvg-logo.svg"
+                alt="Web to SVG"
+                width={153}
+                height={29}
+                className="h-7 w-auto"
+              />
+            </Link>
+            <p className="text-sm text-gray-500 max-w-xs">
+              Click any element on a webpage and export it as a clean SVG or
+              PNG.
+            </p>
+          </div>
+
+          <ButtonGroup
+            alignment="right"
+            buttons={[
+              {
+                _key: "add-to-browser",
+                buttonText: "Add to Browser",
+                variant: "primary",
+                icon: "Chrome",
+                iconPosition: "left",
+                link: {
+                  _type: "link",
+                  linkType: "href",
+                  href: "https://chromewebstore.google.com",
+                  openInNewTab: true,
+                },
+              },
+            ]}
+          />
+        </div>
+
+        <div className="mt-12 pt-6 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-400">
+          <span>&copy; {new Date().getFullYear()} Web to SVG</span>
+          <span>
+            Extension by{" "}
             <a
-              href="https://github.com/sanity-io/sanity-template-nextjs-clean"
-              className="rounded-full flex gap-2 font-mono whitespace-nowrap items-center bg-black hover:bg-blue focus:bg-blue py-3 px-6 text-white transition-colors duration-200"
+              href="https://markusevanger.no"
               target="_blank"
               rel="noopener noreferrer"
             >
-              View on GitHub
+              <span className="inline-block px-1.5 py-0.5 rounded bg-primary text-black font-bold text-[10px]">
+                markusevanger.no
+              </span>
             </a>
-            <a href="https://nextjs.org/docs" className="mx-3 hover:underline font-mono">
-              Read Next.js Documentation
-            </a>
-          </div>
+          </span>
         </div>
       </div>
     </footer>
-  )
+  );
 }

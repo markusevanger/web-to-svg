@@ -7,9 +7,9 @@ const dist = 'dist';
 // Clean and prepare dist
 await mkdir(dist, { recursive: true });
 
-// Bundle content script (picker.js entry point → single IIFE)
+// Bundle content script (entry.js → single IIFE, imports from @web-to-svg/engine)
 await esbuild.build({
-  entryPoints: ['src/content/picker.js'],
+  entryPoints: ['src/content/entry.js'],
   bundle: true,
   format: 'iife',
   target: 'chrome120',

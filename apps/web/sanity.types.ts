@@ -13,6 +13,21 @@
  */
 
 // Source: ../../sanity.schema.json
+export type SanityImageAssetReference = {
+  _ref: string;
+  _type: "reference";
+  _weak?: boolean;
+  [internalGroqTypeReferenceTo]?: "sanity.imageAsset";
+};
+
+export type BlockItemImage = {
+  asset?: SanityImageAssetReference;
+  media?: unknown; // Unable to locate the referenced type "blockItem.image.media" in schema
+  hotspot?: SanityImageHotspot;
+  crop?: SanityImageCrop;
+  _type: "image";
+};
+
 export type PageReference = {
   _ref: string;
   _type: "reference";
@@ -29,18 +44,122 @@ export type PostReference = {
 
 export type Link = {
   _type: "link";
-  linkType?: "href" | "page" | "post";
+  linkType?: "href" | "page" | "post" | "demo";
   href?: string;
   page?: PageReference;
   post?: PostReference;
   openInNewTab?: boolean;
 };
 
-export type SanityImageAssetReference = {
+export type AccordionGroup = {
+  _type: "accordionGroup";
+  items?: Array<{
+    title: string;
+    content?: BlockContentTextOnly;
+    _type: "accordionItem";
+    _key: string;
+  }>;
+};
+
+export type ButtonGroup = {
+  _type: "buttonGroup";
+  buttons?: Array<
+    {
+      _key: string;
+    } & Button
+  >;
+  alignment?: "left" | "center" | "right";
+};
+
+export type Blocks = {
+  _type: "blocks";
+  heading?: string;
+  items?: Array<{
+    mediaType?: "icon" | "image";
+    icon?: string;
+    image?: BlockItemImage;
+    title: string;
+    excerpt?: Array<{
+      children?: Array<{
+        marks?: Array<string>;
+        text?: string;
+        _type: "span";
+        _key: string;
+      }>;
+      style?: "normal";
+      listItem?: never;
+      markDefs?: null;
+      level?: number;
+      _type: "block";
+      _key: string;
+    }>;
+    _type: "blockItem";
+    _key: string;
+  }>;
+};
+
+export type Steps = {
+  _type: "steps";
+  heading: string;
+  steps?: Array<{
+    text?: Array<{
+      children?: Array<{
+        marks?: Array<string>;
+        text?: string;
+        _type: "span";
+        _key: string;
+      }>;
+      style?: "normal";
+      listItem?: never;
+      markDefs?: Array<{
+        color?: "#04e762" | "#f5b700" | "#008bf8" | "#e80080";
+        _type: "highlight";
+        _key: string;
+      }>;
+      level?: number;
+      _type: "block";
+      _key: string;
+    }>;
+    _type: "step";
+    _key: string;
+  }>;
+  image?: {
+    asset?: SanityImageAssetReference;
+    media?: unknown;
+    hotspot?: SanityImageHotspot;
+    crop?: SanityImageCrop;
+    _type: "image";
+  };
+  contentAlignment?: "textFirst" | "imageFirst";
+};
+
+export type SanityFileAssetReference = {
   _ref: string;
   _type: "reference";
   _weak?: boolean;
-  [internalGroqTypeReferenceTo]?: "sanity.imageAsset";
+  [internalGroqTypeReferenceTo]?: "sanity.fileAsset";
+};
+
+export type SplitSection = {
+  _type: "splitSection";
+  heading: string;
+  subheading?: string;
+  content?: BlockContent;
+  mediaType?: "image" | "video";
+  image?: {
+    asset?: SanityImageAssetReference;
+    media?: unknown;
+    hotspot?: SanityImageHotspot;
+    crop?: SanityImageCrop;
+    _type: "image";
+  };
+  video?: {
+    asset?: SanityFileAssetReference;
+    media?: unknown;
+    _type: "file";
+  };
+  videoUrl?: string;
+  contentAlignment?: "textFirst" | "imageFirst";
 };
 
 export type CallToAction = {
@@ -96,15 +215,22 @@ export type BlockContent = Array<
       }>;
       style?: "normal" | "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "blockquote";
       listItem?: "bullet" | "number";
-      markDefs?: Array<{
-        linkType?: "href" | "page" | "post";
-        href?: string;
-        page?: PageReference;
-        post?: PostReference;
-        openInNewTab?: boolean;
-        _type: "link";
-        _key: string;
-      }>;
+      markDefs?: Array<
+        | {
+            linkType?: "href" | "page" | "post";
+            href?: string;
+            page?: PageReference;
+            post?: PostReference;
+            openInNewTab?: boolean;
+            _type: "link";
+            _key: string;
+          }
+        | {
+            color?: "#04e762" | "#f5b700" | "#008bf8" | "#e80080";
+            _type: "highlight";
+            _key: string;
+          }
+      >;
       level?: number;
       _type: "block";
       _key: string;
@@ -117,12 +243,59 @@ export type BlockContent = Array<
       _type: "image";
       _key: string;
     }
+  | ({
+      _key: string;
+    } & ButtonGroup)
+  | ({
+      _key: string;
+    } & AccordionGroup)
 >;
 
 export type Button = {
   _type: "button";
   buttonText?: string;
   link?: Link;
+  variant?: "primary" | "secondary";
+  icon?: string;
+  iconPosition?: "left" | "right";
+};
+
+export type Feedback = {
+  _id: string;
+  _type: "feedback";
+  _createdAt: string;
+  _updatedAt: string;
+  _rev: string;
+  message: string;
+  feedbackType?: "general" | "bug" | "feature";
+  name?: string;
+  email?: string;
+  screenshot?: {
+    asset?: SanityImageAssetReference;
+    media?: unknown;
+    hotspot?: SanityImageHotspot;
+    crop?: SanityImageCrop;
+    alt?: string;
+    _type: "image";
+  };
+  status?: "new" | "reviewed" | "resolved";
+  createdAt?: string;
+};
+
+export type SanityImageCrop = {
+  _type: "sanity.imageCrop";
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+};
+
+export type SanityImageHotspot = {
+  _type: "sanity.imageHotspot";
+  x: number;
+  y: number;
+  height: number;
+  width: number;
 };
 
 export type Settings = {
@@ -154,6 +327,7 @@ export type Settings = {
     _type: "block";
     _key: string;
   }>;
+  headerButton?: Button;
   ogImage?: {
     asset?: SanityImageAssetReference;
     media?: unknown;
@@ -163,22 +337,6 @@ export type Settings = {
     metadataBase?: string;
     _type: "image";
   };
-};
-
-export type SanityImageCrop = {
-  _type: "sanity.imageCrop";
-  top: number;
-  bottom: number;
-  left: number;
-  right: number;
-};
-
-export type SanityImageHotspot = {
-  _type: "sanity.imageHotspot";
-  x: number;
-  y: number;
-  height: number;
-  width: number;
 };
 
 export type Page = {
@@ -198,6 +356,15 @@ export type Page = {
     | ({
         _key: string;
       } & InfoSection)
+    | ({
+        _key: string;
+      } & SplitSection)
+    | ({
+        _key: string;
+      } & Steps)
+    | ({
+        _key: string;
+      } & Blocks)
   >;
 };
 
@@ -489,18 +656,26 @@ export type Geopoint = {
 };
 
 export type AllSanitySchemaTypes =
+  | SanityImageAssetReference
+  | BlockItemImage
   | PageReference
   | PostReference
   | Link
-  | SanityImageAssetReference
+  | AccordionGroup
+  | ButtonGroup
+  | Blocks
+  | Steps
+  | SanityFileAssetReference
+  | SplitSection
   | CallToAction
   | InfoSection
   | BlockContentTextOnly
   | BlockContent
   | Button
-  | Settings
+  | Feedback
   | SanityImageCrop
   | SanityImageHotspot
+  | Settings
   | Page
   | PersonReference
   | Post
@@ -532,7 +707,7 @@ export declare const internalGroqTypeReferenceTo: unique symbol;
 
 // Source: sanity/lib/queries.ts
 // Variable: settingsQuery
-// Query: *[_type == "settings"][0]
+// Query: *[_type == "settings"][0]{  ...,  headerButton {    ...,      link {      ...,        _type == "link" => {    "page": page->slug.current,    "post": post->slug.current  }      }  }}
 export type SettingsQueryResult = {
   _id: string;
   _type: "settings";
@@ -562,6 +737,21 @@ export type SettingsQueryResult = {
     _type: "block";
     _key: string;
   }>;
+  headerButton: {
+    _type: "button";
+    buttonText?: string;
+    link: {
+      _type: "link";
+      linkType?: "demo" | "href" | "page" | "post";
+      href?: string;
+      page: string | null;
+      post: string | null;
+      openInNewTab?: boolean;
+    } | null;
+    variant?: "primary" | "secondary";
+    icon?: string;
+    iconPosition?: "left" | "right";
+  } | null;
   ogImage?: {
     asset?: SanityImageAssetReference;
     media?: unknown;
@@ -575,7 +765,7 @@ export type SettingsQueryResult = {
 
 // Source: sanity/lib/queries.ts
 // Variable: getPageQuery
-// Query: *[_type == 'page' && slug.current == $slug][0]{    _id,    _type,    name,    slug,    heading,    subheading,    "pageBuilder": pageBuilder[]{      ...,      _type == "callToAction" => {        ...,        button {          ...,            link {      ...,        _type == "link" => {    "page": page->slug.current,    "post": post->slug.current  }      }        }      },      _type == "infoSection" => {        content[]{          ...,          markDefs[]{            ...,              _type == "link" => {    "page": page->slug.current,    "post": post->slug.current  }          }        }      },    },  }
+// Query: *[_type == 'page' && slug.current == $slug][0]{    _id,    _type,    name,    slug,    heading,    subheading,    "pageBuilder": pageBuilder[]{      ...,      _type == "callToAction" => {        ...,        button {          ...,            link {      ...,        _type == "link" => {    "page": page->slug.current,    "post": post->slug.current  }      }        }      },      _type == "infoSection" => {        content[]{          ...,          markDefs[]{            ...,              _type == "link" => {    "page": page->slug.current,    "post": post->slug.current  }          }        }      },      _type == "splitSection" => {        ...,        content[]{          ...,          markDefs[]{            ...,              _type == "link" => {    "page": page->slug.current,    "post": post->slug.current  }          }        },        buttonGroup {          ...,          buttons[]{            ...,              link {      ...,        _type == "link" => {    "page": page->slug.current,    "post": post->slug.current  }      }          }        }      },      _type == "steps" => {        ...,        steps[]{          ...,          text[]{            ...,            markDefs[]{              ...            }          }        }      },    },  }
 export type GetPageQueryResult = {
   _id: string;
   _type: "page";
@@ -584,6 +774,33 @@ export type GetPageQueryResult = {
   heading: string;
   subheading: string | null;
   pageBuilder: Array<
+    | {
+        _key: string;
+        _type: "blocks";
+        heading?: string;
+        items?: Array<{
+          mediaType?: "icon" | "image";
+          icon?: string;
+          image?: BlockItemImage;
+          title: string;
+          excerpt?: Array<{
+            children?: Array<{
+              marks?: Array<string>;
+              text?: string;
+              _type: "span";
+              _key: string;
+            }>;
+            style?: "normal";
+            listItem?: never;
+            markDefs?: null;
+            level?: number;
+            _type: "block";
+            _key: string;
+          }>;
+          _type: "blockItem";
+          _key: string;
+        }>;
+      }
     | {
         _key: string;
         _type: "callToAction";
@@ -595,12 +812,15 @@ export type GetPageQueryResult = {
           buttonText?: string;
           link: {
             _type: "link";
-            linkType?: "href" | "page" | "post";
+            linkType?: "demo" | "href" | "page" | "post";
             href?: string;
             page: string | null;
             post: string | null;
             openInNewTab?: boolean;
           } | null;
+          variant?: "primary" | "secondary";
+          icon?: string;
+          iconPosition?: "left" | "right";
         } | null;
         image?: {
           asset?: SanityImageAssetReference;
@@ -619,6 +839,17 @@ export type GetPageQueryResult = {
         subheading?: string;
         content: Array<
           | {
+              _key: string;
+              _type: "accordionGroup";
+              items?: Array<{
+                title: string;
+                content?: BlockContentTextOnly;
+                _type: "accordionItem";
+                _key: string;
+              }>;
+              markDefs: null;
+            }
+          | {
               children?: Array<{
                 marks?: Array<string>;
                 text?: string;
@@ -635,18 +866,36 @@ export type GetPageQueryResult = {
                 | "h6"
                 | "normal";
               listItem?: "bullet" | "number";
-              markDefs: Array<{
-                linkType?: "href" | "page" | "post";
-                href?: string;
-                page: string | null;
-                post: string | null;
-                openInNewTab?: boolean;
-                _type: "link";
-                _key: string;
-              }> | null;
+              markDefs: Array<
+                | {
+                    color?: "#008bf8" | "#04e762" | "#e80080" | "#f5b700";
+                    _type: "highlight";
+                    _key: string;
+                  }
+                | {
+                    linkType?: "href" | "page" | "post";
+                    href?: string;
+                    page: string | null;
+                    post: string | null;
+                    openInNewTab?: boolean;
+                    _type: "link";
+                    _key: string;
+                  }
+              > | null;
               level?: number;
               _type: "block";
               _key: string;
+            }
+          | {
+              _key: string;
+              _type: "buttonGroup";
+              buttons?: Array<
+                {
+                  _key: string;
+                } & Button
+              >;
+              alignment?: "center" | "left" | "right";
+              markDefs: null;
             }
           | {
               asset?: SanityImageAssetReference;
@@ -658,6 +907,133 @@ export type GetPageQueryResult = {
               markDefs: null;
             }
         > | null;
+      }
+    | {
+        _key: string;
+        _type: "splitSection";
+        heading: string;
+        subheading?: string;
+        content: Array<
+          | {
+              _key: string;
+              _type: "accordionGroup";
+              items?: Array<{
+                title: string;
+                content?: BlockContentTextOnly;
+                _type: "accordionItem";
+                _key: string;
+              }>;
+              markDefs: null;
+            }
+          | {
+              children?: Array<{
+                marks?: Array<string>;
+                text?: string;
+                _type: "span";
+                _key: string;
+              }>;
+              style?:
+                | "blockquote"
+                | "h1"
+                | "h2"
+                | "h3"
+                | "h4"
+                | "h5"
+                | "h6"
+                | "normal";
+              listItem?: "bullet" | "number";
+              markDefs: Array<
+                | {
+                    color?: "#008bf8" | "#04e762" | "#e80080" | "#f5b700";
+                    _type: "highlight";
+                    _key: string;
+                  }
+                | {
+                    linkType?: "href" | "page" | "post";
+                    href?: string;
+                    page: string | null;
+                    post: string | null;
+                    openInNewTab?: boolean;
+                    _type: "link";
+                    _key: string;
+                  }
+              > | null;
+              level?: number;
+              _type: "block";
+              _key: string;
+            }
+          | {
+              _key: string;
+              _type: "buttonGroup";
+              buttons?: Array<
+                {
+                  _key: string;
+                } & Button
+              >;
+              alignment?: "center" | "left" | "right";
+              markDefs: null;
+            }
+          | {
+              asset?: SanityImageAssetReference;
+              media?: unknown;
+              hotspot?: SanityImageHotspot;
+              crop?: SanityImageCrop;
+              _type: "image";
+              _key: string;
+              markDefs: null;
+            }
+        > | null;
+        mediaType?: "image" | "video";
+        image?: {
+          asset?: SanityImageAssetReference;
+          media?: unknown;
+          hotspot?: SanityImageHotspot;
+          crop?: SanityImageCrop;
+          _type: "image";
+        };
+        video?: {
+          asset?: SanityFileAssetReference;
+          media?: unknown;
+          _type: "file";
+        };
+        videoUrl?: string;
+        contentAlignment?: "imageFirst" | "textFirst";
+        buttonGroup: null;
+      }
+    | {
+        _key: string;
+        _type: "steps";
+        heading: string;
+        steps: Array<{
+          text: Array<{
+            children?: Array<{
+              marks?: Array<string>;
+              text?: string;
+              _type: "span";
+              _key: string;
+            }>;
+            style?: "normal";
+            listItem?: never;
+            markDefs: Array<{
+              color?: "#008bf8" | "#04e762" | "#e80080" | "#f5b700";
+              _type: "highlight";
+              _key: string;
+            }> | null;
+            level?: number;
+            _type: "block";
+            _key: string;
+          }> | null;
+          _type: "step";
+          _key: string;
+        }> | null;
+        image?: {
+          asset?: SanityImageAssetReference;
+          media?: unknown;
+          hotspot?: SanityImageHotspot;
+          crop?: SanityImageCrop;
+          _type: "image";
+        };
+        contentAlignment?: "imageFirst" | "textFirst";
       }
   > | null;
 } | null;
@@ -748,6 +1124,17 @@ export type MorePostsQueryResult = Array<{
 export type PostQueryResult = {
   content: Array<
     | {
+        _key: string;
+        _type: "accordionGroup";
+        items?: Array<{
+          title: string;
+          content?: BlockContentTextOnly;
+          _type: "accordionItem";
+          _key: string;
+        }>;
+        markDefs: null;
+      }
+    | {
         children?: Array<{
           marks?: Array<string>;
           text?: string;
@@ -764,18 +1151,36 @@ export type PostQueryResult = {
           | "h6"
           | "normal";
         listItem?: "bullet" | "number";
-        markDefs: Array<{
-          linkType?: "href" | "page" | "post";
-          href?: string;
-          page: string | null;
-          post: string | null;
-          openInNewTab?: boolean;
-          _type: "link";
-          _key: string;
-        }> | null;
+        markDefs: Array<
+          | {
+              color?: "#008bf8" | "#04e762" | "#e80080" | "#f5b700";
+              _type: "highlight";
+              _key: string;
+            }
+          | {
+              linkType?: "href" | "page" | "post";
+              href?: string;
+              page: string | null;
+              post: string | null;
+              openInNewTab?: boolean;
+              _type: "link";
+              _key: string;
+            }
+        > | null;
         level?: number;
         _type: "block";
         _key: string;
+      }
+    | {
+        _key: string;
+        _type: "buttonGroup";
+        buttons?: Array<
+          {
+            _key: string;
+          } & Button
+        >;
+        alignment?: "center" | "left" | "right";
+        markDefs: null;
       }
     | {
         asset?: SanityImageAssetReference;
@@ -833,8 +1238,8 @@ export type PagesSlugsResult = Array<{
 import "@sanity/client";
 declare module "@sanity/client" {
   interface SanityQueries {
-    '*[_type == "settings"][0]': SettingsQueryResult;
-    '\n  *[_type == \'page\' && slug.current == $slug][0]{\n    _id,\n    _type,\n    name,\n    slug,\n    heading,\n    subheading,\n    "pageBuilder": pageBuilder[]{\n      ...,\n      _type == "callToAction" => {\n        ...,\n        button {\n          ...,\n          \n  link {\n      ...,\n      \n  _type == "link" => {\n    "page": page->slug.current,\n    "post": post->slug.current\n  }\n\n      }\n\n        }\n      },\n      _type == "infoSection" => {\n        content[]{\n          ...,\n          markDefs[]{\n            ...,\n            \n  _type == "link" => {\n    "page": page->slug.current,\n    "post": post->slug.current\n  }\n\n          }\n        }\n      },\n    },\n  }\n': GetPageQueryResult;
+    '*[_type == "settings"][0]{\n  ...,\n  headerButton {\n    ...,\n    \n  link {\n      ...,\n      \n  _type == "link" => {\n    "page": page->slug.current,\n    "post": post->slug.current\n  }\n\n      }\n\n  }\n}': SettingsQueryResult;
+    '\n  *[_type == \'page\' && slug.current == $slug][0]{\n    _id,\n    _type,\n    name,\n    slug,\n    heading,\n    subheading,\n    "pageBuilder": pageBuilder[]{\n      ...,\n      _type == "callToAction" => {\n        ...,\n        button {\n          ...,\n          \n  link {\n      ...,\n      \n  _type == "link" => {\n    "page": page->slug.current,\n    "post": post->slug.current\n  }\n\n      }\n\n        }\n      },\n      _type == "infoSection" => {\n        content[]{\n          ...,\n          markDefs[]{\n            ...,\n            \n  _type == "link" => {\n    "page": page->slug.current,\n    "post": post->slug.current\n  }\n\n          }\n        }\n      },\n      _type == "splitSection" => {\n        ...,\n        content[]{\n          ...,\n          markDefs[]{\n            ...,\n            \n  _type == "link" => {\n    "page": page->slug.current,\n    "post": post->slug.current\n  }\n\n          }\n        },\n        buttonGroup {\n          ...,\n          buttons[]{\n            ...,\n            \n  link {\n      ...,\n      \n  _type == "link" => {\n    "page": page->slug.current,\n    "post": post->slug.current\n  }\n\n      }\n\n          }\n        }\n      },\n      _type == "steps" => {\n        ...,\n        steps[]{\n          ...,\n          text[]{\n            ...,\n            markDefs[]{\n              ...\n            }\n          }\n        }\n      },\n    },\n  }\n': GetPageQueryResult;
     '\n  *[_type == "page" || _type == "post" && defined(slug.current)] | order(_type asc) {\n    "slug": slug.current,\n    _type,\n    _updatedAt,\n  }\n': SitemapDataResult;
     '\n  *[_type == "post" && defined(slug.current)] | order(date desc, _updatedAt desc) {\n    \n  _id,\n  "status": select(_originalId in path("drafts.**") => "draft", "published"),\n  "title": coalesce(title, "Untitled"),\n  "slug": slug.current,\n  excerpt,\n  coverImage,\n  "date": coalesce(date, _updatedAt),\n  "author": author->{firstName, lastName, picture},\n\n  }\n': AllPostsQueryResult;
     '\n  *[_type == "post" && _id != $skip && defined(slug.current)] | order(date desc, _updatedAt desc) [0...$limit] {\n    \n  _id,\n  "status": select(_originalId in path("drafts.**") => "draft", "published"),\n  "title": coalesce(title, "Untitled"),\n  "slug": slug.current,\n  excerpt,\n  coverImage,\n  "date": coalesce(date, _updatedAt),\n  "author": author->{firstName, lastName, picture},\n\n  }\n': MorePostsQueryResult;

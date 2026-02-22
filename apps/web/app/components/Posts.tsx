@@ -23,7 +23,7 @@ const Post = ({post}: {post: AllPostsQueryResult[number]}) => {
       <div>
         <h3 className="text-2xl mb-4">{title}</h3>
 
-        <p className="line-clamp-3 text-sm leading-6 text-gray-600 max-w-[70ch]">{excerpt}</p>
+        <p className="line-clamp-3 text-sm leading-6 text-black max-w-[70ch]">{excerpt}</p>
       </div>
       <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
         {author && author.firstName && author.lastName && (
@@ -49,8 +49,8 @@ const Posts = ({
   subHeading?: string
 }) => (
   <div>
-    {heading && <h2 className="text-3xl text-gray-900 sm:text-4xl lg:text-5xl">{heading}</h2>}
-    {subHeading && <p className="mt-2 text-lg leading-8 text-gray-600">{subHeading}</p>}
+    {heading && <h2 className="text-3xl text-black sm:text-4xl lg:text-5xl">{heading}</h2>}
+    {subHeading && <p className="mt-2 text-lg leading-8 text-black">{subHeading}</p>}
     <div className="pt-6 space-y-6">{children}</div>
   </div>
 )

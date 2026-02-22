@@ -1,5 +1,5 @@
 {
-  "name": "@svg-picker/extension",
+  "name": "@web-to-svg/extension",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -13,8 +13,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "dom-to-svg": "^0.12.2",
-    "opentype.js": "^1.3.4"
+    "@web-to-svg/engine": "workspace:*"
   },
   "devDependencies": {
     "esbuild": "^0.27.3",

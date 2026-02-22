@@ -116,6 +116,13 @@ export const settings = defineType({
       ],
     }),
     defineField({
+      name: 'headerButton',
+      title: 'Header Button',
+      description: 'CTA button displayed in the site header (e.g. "Add to Chrome")',
+      type: 'button',
+      options: {collapsible: true, collapsed: true},
+    }),
+    defineField({
       name: 'ogImage',
       title: 'Open Graph Image',
       type: 'image',

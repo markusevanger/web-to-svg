@@ -1,4 +1,5 @@
 import {defineArrayMember, defineType, defineField} from 'sanity'
+import {HighlightIcon} from '@sanity/icons'
 import type {Link} from '../../../sanity.types'
 
 /**
@@ -93,6 +94,28 @@ export const blockContent = defineType({
               }),
             ],
           },
+          {
+            name: 'highlight',
+            type: 'object',
+            title: 'Highlight',
+            icon: HighlightIcon,
+            fields: [
+              defineField({
+                name: 'color',
+                title: 'Highlight Color',
+                type: 'string',
+                options: {
+                  list: [
+                    {title: 'Green', value: '#04e762'},
+                    {title: 'Yellow', value: '#f5b700'},
+                    {title: 'Blue', value: '#008bf8'},
+                    {title: 'Pink', value: '#e80080'},
+                  ],
+                },
+                initialValue: '#f5b700',
+              }),
+            ],
+          },
         ],
       },
     }),
@@ -101,6 +124,12 @@ export const blockContent = defineType({
       options: {
         hotspot: true,
       },
+    }),
+    defineArrayMember({
+      type: 'buttonGroup',
+    }),
+    defineArrayMember({
+      type: 'accordionGroup',
     }),
   ],
 })

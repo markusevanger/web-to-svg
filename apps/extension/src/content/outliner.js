@@ -58,7 +58,7 @@ async function collectFontFaceUrls() {
                 const cssText = await resp.text();
                 parseFontFaceRulesFromText(cssText, sheet.href, fontMap);
               }
-            } catch (err) { console.debug('[Element to SVG] Cross-origin sheet fetch failed:', err.message); }
+            } catch (err) { console.debug('[Web to SVG] Cross-origin sheet fetch failed:', err.message); }
           })()
         );
       }
@@ -132,7 +132,7 @@ async function loadFont(url) {
       buffer = await resp.arrayBuffer();
     }
   } catch (err) {
-    console.debug('[Element to SVG] Font load via SW failed:', err.message);
+    console.debug('[Web to SVG] Font load via SW failed:', err.message);
   }
   if (!buffer) {
     // Fallback: direct fetch (works for same-origin fonts)
@@ -484,7 +484,7 @@ export async function outlineTextInSVGDoc(svgDoc) {
     }
   }
 
-  console.log(`[Element to SVG] Outlined ${vectorOutlined} text(s) as vectors, ${rasterOutlined} as raster.`);
+  console.log(`[Web to SVG] Outlined ${vectorOutlined} text(s) as vectors, ${rasterOutlined} as raster.`);
 }
 
 /**

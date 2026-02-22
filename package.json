@@ -1,13 +1,13 @@
 {
-  "name": "svg-picker",
+  "name": "web-to-svg",
   "private": true,
   "packageManager": "pnpm@10.28.0",
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
-    "dev:extension": "pnpm --filter @svg-picker/extension dev",
-    "dev:web": "pnpm --filter @svg-picker/web dev",
-    "dev:studio": "pnpm --filter @svg-picker/studio dev"
+    "dev:extension": "pnpm --filter @web-to-svg/extension dev",
+    "dev:web": "pnpm --filter @web-to-svg/web dev",
+    "dev:studio": "pnpm --filter @web-to-svg/studio dev"
   },
   "devDependencies": {
     "turbo": "^2"

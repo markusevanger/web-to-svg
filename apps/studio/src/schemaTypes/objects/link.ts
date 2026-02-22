@@ -24,6 +24,7 @@ export const link = defineType({
           {title: 'URL', value: 'href'},
           {title: 'Page', value: 'page'},
           {title: 'Post', value: 'post'},
+          {title: 'Demo (Activates Picker)', value: 'demo'},
         ],
         layout: 'radio',
       },
@@ -32,7 +33,7 @@ export const link = defineType({
       name: 'href',
       title: 'URL',
       type: 'url',
-      hidden: ({parent}) => parent?.linkType !== 'href',
+      hidden: ({parent}) => !parent?.linkType || parent.linkType !== 'href',
       validation: (Rule) =>
         // Custom validation to ensure URL is provided if the link type is 'href'
         Rule.custom((value, context) => {
@@ -80,6 +81,7 @@ export const link = defineType({
       title: 'Open in new tab',
       type: 'boolean',
       initialValue: false,
+      hidden: ({parent}) => parent?.linkType === 'demo',
     }),
   ],
 })

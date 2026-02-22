@@ -8,14 +8,14 @@ function injectContentScript(tabId) {
 // Context menu
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
-    id: 'element-to-svg',
-    title: 'Element to SVG',
+    id: 'web-to-svg',
+    title: 'Web to SVG',
     contexts: ['page', 'image', 'video'],
   });
 });
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-  if (info.menuItemId === 'element-to-svg' && tab?.id) {
+  if (info.menuItemId === 'web-to-svg' && tab?.id) {
     injectContentScript(tab.id);
   }
 });

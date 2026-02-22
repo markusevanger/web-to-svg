@@ -1,0 +1,18 @@
+{
+  "name": "@web-to-svg/engine",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./picker": "./src/picker.js",
+    "./converter": "./src/converter.js",
+    "./outliner": "./src/outliner.js",
+    "./figma-optimizer": "./src/figma-optimizer.js",
+    "./adapter": "./src/adapter.js"
+  },
+  "dependencies": {
+    "dom-to-svg": "^0.12.2",
+    "opentype.js": "^1.3.4"
+  }
+}

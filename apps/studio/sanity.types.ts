@@ -13,6 +13,21 @@
  */
 
 // Source: ../../sanity.schema.json
+export type SanityImageAssetReference = {
+  _ref: string;
+  _type: "reference";
+  _weak?: boolean;
+  [internalGroqTypeReferenceTo]?: "sanity.imageAsset";
+};
+
+export type BlockItemImage = {
+  asset?: SanityImageAssetReference;
+  media?: unknown; // Unable to locate the referenced type "blockItem.image.media" in schema
+  hotspot?: SanityImageHotspot;
+  crop?: SanityImageCrop;
+  _type: "image";
+};
+
 export type PageReference = {
   _ref: string;
   _type: "reference";
@@ -29,18 +44,122 @@ export type PostReference = {
 
 export type Link = {
   _type: "link";
-  linkType?: "href" | "page" | "post";
+  linkType?: "href" | "page" | "post" | "demo";
   href?: string;
   page?: PageReference;
   post?: PostReference;
   openInNewTab?: boolean;
 };
 
-export type SanityImageAssetReference = {
+export type AccordionGroup = {
+  _type: "accordionGroup";
+  items?: Array<{
+    title: string;
+    content?: BlockContentTextOnly;
+    _type: "accordionItem";
+    _key: string;
+  }>;
+};
+
+export type ButtonGroup = {
+  _type: "buttonGroup";
+  buttons?: Array<
+    {
+      _key: string;
+    } & Button
+  >;
+  alignment?: "left" | "center" | "right";
+};
+
+export type Blocks = {
+  _type: "blocks";
+  heading?: string;
+  items?: Array<{
+    mediaType?: "icon" | "image";
+    icon?: string;
+    image?: BlockItemImage;
+    title: string;
+    excerpt?: Array<{
+      children?: Array<{
+        marks?: Array<string>;
+        text?: string;
+        _type: "span";
+        _key: string;
+      }>;
+      style?: "normal";
+      listItem?: never;
+      markDefs?: null;
+      level?: number;
+      _type: "block";
+      _key: string;
+    }>;
+    _type: "blockItem";
+    _key: string;
+  }>;
+};
+
+export type Steps = {
+  _type: "steps";
+  heading: string;
+  steps?: Array<{
+    text?: Array<{
+      children?: Array<{
+        marks?: Array<string>;
+        text?: string;
+        _type: "span";
+        _key: string;
+      }>;
+      style?: "normal";
+      listItem?: never;
+      markDefs?: Array<{
+        color?: "#04e762" | "#f5b700" | "#008bf8" | "#e80080";
+        _type: "highlight";
+        _key: string;
+      }>;
+      level?: number;
+      _type: "block";
+      _key: string;
+    }>;
+    _type: "step";
+    _key: string;
+  }>;
+  image?: {
+    asset?: SanityImageAssetReference;
+    media?: unknown;
+    hotspot?: SanityImageHotspot;
+    crop?: SanityImageCrop;
+    _type: "image";
+  };
+  contentAlignment?: "textFirst" | "imageFirst";
+};
+
+export type SanityFileAssetReference = {
   _ref: string;
   _type: "reference";
   _weak?: boolean;
-  [internalGroqTypeReferenceTo]?: "sanity.imageAsset";
+  [internalGroqTypeReferenceTo]?: "sanity.fileAsset";
+};
+
+export type SplitSection = {
+  _type: "splitSection";
+  heading: string;
+  subheading?: string;
+  content?: BlockContent;
+  mediaType?: "image" | "video";
+  image?: {
+    asset?: SanityImageAssetReference;
+    media?: unknown;
+    hotspot?: SanityImageHotspot;
+    crop?: SanityImageCrop;
+    _type: "image";
+  };
+  video?: {
+    asset?: SanityFileAssetReference;
+    media?: unknown;
+    _type: "file";
+  };
+  videoUrl?: string;
+  contentAlignment?: "textFirst" | "imageFirst";
 };
 
 export type CallToAction = {
@@ -96,15 +215,22 @@ export type BlockContent = Array<
       }>;
       style?: "normal" | "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "blockquote";
       listItem?: "bullet" | "number";
-      markDefs?: Array<{
-        linkType?: "href" | "page" | "post";
-        href?: string;
-        page?: PageReference;
-        post?: PostReference;
-        openInNewTab?: boolean;
-        _type: "link";
-        _key: string;
-      }>;
+      markDefs?: Array<
+        | {
+            linkType?: "href" | "page" | "post";
+            href?: string;
+            page?: PageReference;
+            post?: PostReference;
+            openInNewTab?: boolean;
+            _type: "link";
+            _key: string;
+          }
+        | {
+            color?: "#04e762" | "#f5b700" | "#008bf8" | "#e80080";
+            _type: "highlight";
+            _key: string;
+          }
+      >;
       level?: number;
       _type: "block";
       _key: string;
@@ -117,12 +243,59 @@ export type BlockContent = Array<
       _type: "image";
       _key: string;
     }
+  | ({
+      _key: string;
+    } & ButtonGroup)
+  | ({
+      _key: string;
+    } & AccordionGroup)
 >;
 
 export type Button = {
   _type: "button";
   buttonText?: string;
   link?: Link;
+  variant?: "primary" | "secondary";
+  icon?: string;
+  iconPosition?: "left" | "right";
+};
+
+export type Feedback = {
+  _id: string;
+  _type: "feedback";
+  _createdAt: string;
+  _updatedAt: string;
+  _rev: string;
+  message: string;
+  feedbackType?: "general" | "bug" | "feature";
+  name?: string;
+  email?: string;
+  screenshot?: {
+    asset?: SanityImageAssetReference;
+    media?: unknown;
+    hotspot?: SanityImageHotspot;
+    crop?: SanityImageCrop;
+    alt?: string;
+    _type: "image";
+  };
+  status?: "new" | "reviewed" | "resolved";
+  createdAt?: string;
+};
+
+export type SanityImageCrop = {
+  _type: "sanity.imageCrop";
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+};
+
+export type SanityImageHotspot = {
+  _type: "sanity.imageHotspot";
+  x: number;
+  y: number;
+  height: number;
+  width: number;
 };
 
 export type Settings = {
@@ -154,6 +327,7 @@ export type Settings = {
     _type: "block";
     _key: string;
   }>;
+  headerButton?: Button;
   ogImage?: {
     asset?: SanityImageAssetReference;
     media?: unknown;
@@ -163,22 +337,6 @@ export type Settings = {
     metadataBase?: string;
     _type: "image";
   };
-};
-
-export type SanityImageCrop = {
-  _type: "sanity.imageCrop";
-  top: number;
-  bottom: number;
-  left: number;
-  right: number;
-};
-
-export type SanityImageHotspot = {
-  _type: "sanity.imageHotspot";
-  x: number;
-  y: number;
-  height: number;
-  width: number;
 };
 
 export type Page = {
@@ -198,6 +356,15 @@ export type Page = {
     | ({
         _key: string;
       } & InfoSection)
+    | ({
+        _key: string;
+      } & SplitSection)
+    | ({
+        _key: string;
+      } & Steps)
+    | ({
+        _key: string;
+      } & Blocks)
   >;
 };
 
@@ -489,18 +656,26 @@ export type Geopoint = {
 };
 
 export type AllSanitySchemaTypes =
+  | SanityImageAssetReference
+  | BlockItemImage
   | PageReference
   | PostReference
   | Link
-  | SanityImageAssetReference
+  | AccordionGroup
+  | ButtonGroup
+  | Blocks
+  | Steps
+  | SanityFileAssetReference
+  | SplitSection
   | CallToAction
   | InfoSection
   | BlockContentTextOnly
   | BlockContent
   | Button
-  | Settings
+  | Feedback
   | SanityImageCrop
   | SanityImageHotspot
+  | Settings
   | Page
   | PersonReference
   | Post

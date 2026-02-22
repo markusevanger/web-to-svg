@@ -11,6 +11,8 @@
 import {PortableText, type PortableTextComponents, type PortableTextBlock} from 'next-sanity'
 import ResolvedLink from '@/app/components/ResolvedLink'
 import Image from '@/app/components/SanityImage'
+import ButtonGroup from '@/app/components/ButtonGroup'
+import AccordionGroup from '@/app/components/AccordionGroup'
 
 export default function CustomPortableText({
   className,
@@ -21,6 +23,14 @@ export default function CustomPortableText({
 }) {
   const components: PortableTextComponents = {
     types: {
+      buttonGroup: ({value}) => {
+        return (
+          <ButtonGroup buttons={value?.buttons} alignment={value?.alignment} />
+        )
+      },
+      accordionGroup: ({value}) => {
+        return <AccordionGroup items={value?.items} />
+      },
       image: ({value}) => {
         if (!value?.asset?._ref) {
           return null
@@ -98,11 +108,21 @@ export default function CustomPortableText({
       link: ({children, value: link}) => {
         return <ResolvedLink link={link}>{children}</ResolvedLink>
       },
+      highlight: ({children, value}) => {
+        return (
+          <span
+            className="px-1.5 py-0.5 rounded-lg"
+            style={{backgroundColor: value?.color || '#f5b700'}}
+          >
+            {children}
+          </span>
+        )
+      },
     },
   }
 
   return (
-    <div className={`prose-a:text-brand prose dark:prose-invert ${className}`}>
+    <div className={`prose-a:text-brand prose text-black dark:prose-invert ${className}`}>
       <PortableText components={components} value={value} />
     </div>
   )

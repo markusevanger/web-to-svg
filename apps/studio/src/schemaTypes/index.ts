@@ -1,8 +1,14 @@
+import {feedback} from './documents/feedback'
 import {person} from './documents/person'
 import {page} from './documents/page'
 import {post} from './documents/post'
 import {callToAction} from './objects/callToAction'
 import {infoSection} from './objects/infoSection'
+import {splitSection} from './objects/splitSection'
+import {steps} from './objects/steps'
+import {blocks} from './objects/blocks'
+import {buttonGroup} from './objects/buttonGroup'
+import {accordionGroup} from './objects/accordionGroup'
 import {settings} from './singletons/settings'
 import {link} from './objects/link'
 import {blockContent} from './objects/blockContent'
@@ -18,11 +24,17 @@ export const schemaTypes = [
   page,
   post,
   person,
+  feedback,
   // Objects
   button,
   blockContent,
   blockContentTextOnly,
   infoSection,
   callToAction,
+  splitSection,
+  steps,
+  blocks,
+  buttonGroup,
+  accordionGroup,
   link,
 ]

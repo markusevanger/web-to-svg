@@ -29,7 +29,7 @@ export default function CTA({block}: CtaProps) {
             className={`${isImageFirst && image ? 'row-start-2 lg:row-start-1 lg:col-start-2' : ''} flex flex-col gap-2 `}
           >
             {eyebrow && (
-              <span className="text-sm uppercase dark:text-white font-mono tracking-tight opacity-70">
+              <span className="text-sm uppercase dark:text-white font-mono tracking-tight">
                 {eyebrow}
               </span>
             )}

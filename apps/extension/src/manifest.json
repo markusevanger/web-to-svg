@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Element to SVG",
+  "name": "Web to SVG",
   "version": "1.0.0",
   "description": "Click any element on a webpage and export it as a clean SVG or PNG.",
   "permissions": ["activeTab", "scripting", "downloads", "clipboardWrite", "storage", "contextMenus"],
