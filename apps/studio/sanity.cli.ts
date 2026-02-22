@@ -1,10 +1,3 @@
-/**
- * Sanity CLI Configuration
- * This file configures the Sanity CLI tool with project-specific settings
- * and customizes the Vite bundler configuration.
- * Learn more: https://www.sanity.io/docs/cli
- */
-
 import {defineCliConfig} from 'sanity/cli'
 
 const projectId = process.env.SANITY_STUDIO_PROJECT_ID || 'wdqtle79'
@@ -15,7 +8,7 @@ export default defineCliConfig({
     projectId,
     dataset,
   },
-  studioHost: process.env.SANITY_STUDIO_STUDIO_HOST || '', // Visit https://www.sanity.io/docs/studio/environment-variables to learn more about using environment variables for local & production.
+  studioHost: 'webtosvg',
   deployment: {autoUpdates: true},
   typegen: {
     path: './src/**/*.{ts,tsx,js,jsx}',
