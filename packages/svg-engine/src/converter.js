@@ -521,7 +521,56 @@ function resolveImageSrc(element) {
   return element.currentSrc || element.src;
 }
 
-export async function convertElementToSVG(element, adapter) {
+/**
+ * Resolve CSS custom properties (var(--…)), currentColor, and inherit in SVG
+ * presentation attributes so the exported SVG is fully self-contained.
+ */
+function resolveCSSVariablesInSVG(original, clone) {
+  const ATTRS = ['fill', 'stroke', 'color', 'stop-color', 'flood-color', 'lighting-color'];
+  const origEls = [original, ...original.querySelectorAll('*')];
+  const cloneEls = [clone, ...clone.querySelectorAll('*')];
+
+  for (let i = 0; i < origEls.length && i < cloneEls.length; i++) {
+    const style = getComputedStyle(origEls[i]);
+    const cloneEl = cloneEls[i];
+
+    for (const attr of ATTRS) {
+      const val = cloneEl.getAttribute(attr);
+      if (!val) continue;
+
+      let resolved = val;
+
+      // Replace var(--name) by directly looking up the CSS custom property
+      if (val.includes('var(')) {
+        resolved = val.replace(
+          /var\(\s*(--[^,)]+)(?:\s*,\s*([^)]+))?\s*\)/g,
+          (match, propName, fallback) => {
+            const propVal = style.getPropertyValue(propName.trim()).trim();
+            return propVal || (fallback ? fallback.trim() : match);
+          },
+        );
+      }
+
+      // Resolve currentColor / inherit via the computed presentation attribute
+      if (resolved === 'currentColor' || resolved === 'inherit') {
+        const computed = style.getPropertyValue(attr).trim();
+        if (computed && computed !== 'currentColor' && computed !== 'inherit') {
+          resolved = computed;
+        }
+      }
+
+      if (resolved !== val) cloneEl.setAttribute(attr, resolved);
+    }
+  }
+}
+
+export async function convertElementToSVG(targetElement, adapter) {
+  // If the element is an SVG child (circle, rect, polygon, path, etc.),
+  // promote to the closest <svg> ancestor.
+  const element = (targetElement.namespaceURI === 'http://www.w3.org/2000/svg' && targetElement.tagName !== 'svg')
+    ? (targetElement.closest('svg') || targetElement)
+    : targetElement;
+
   let svgString;
 
   // Resolve background color before conversion (need live DOM access)
@@ -538,10 +587,26 @@ export async function convertElementToSVG(element, adapter) {
 
   const tag = element.tagName;
 
-  // If the element is already an SVG, clone and serialize directly
-  if (element instanceof SVGSVGElement) {
+  // If the element is already an SVG, clone and serialize directly.
+  if (element.namespaceURI === 'http://www.w3.org/2000/svg' && tag === 'svg') {
     const clone = element.cloneNode(true);
     clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+
+    // Resolve CSS custom properties (e.g. var(--color-primary)) so the SVG is self-contained
+    resolveCSSVariablesInSVG(element, clone);
+
+    // Resolve dimensions to px (em/rem/% won't work in standalone SVG)
+    const rect = element.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      clone.setAttribute('width', String(Math.round(rect.width)));
+      clone.setAttribute('height', String(Math.round(rect.height)));
+    }
+
+    // Remove all inline styles — cloneNode captures stale animation state
+    // (Framer Motion WAAPI sets initial values like opacity:0, scale:0 that
+    // persist in the style attribute even after animation completes).
+    clone.removeAttribute('style');
+
     svgString = new XMLSerializer().serializeToString(clone);
 
   // <img> or <picture> handling

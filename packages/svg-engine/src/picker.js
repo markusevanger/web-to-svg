@@ -911,8 +911,15 @@ export class Picker {
     }
 
     const els = document.elementsFromPoint(cx, cy);
-    const rawTarget = els.find((el) => !this._isOwnElement(el) && el !== document.body && el !== document.documentElement &&
+    let rawTarget = els.find((el) => !this._isOwnElement(el) && el !== document.body && el !== document.documentElement &&
       (!this._scoped || this.container.contains(el)));
+
+    // If the hit element is an SVG child (circle, rect, polygon, path, etc.),
+    // promote to the closest <svg> ancestor so we pick the whole shape.
+    if (rawTarget?.namespaceURI === 'http://www.w3.org/2000/svg' && rawTarget.tagName !== 'svg') {
+      const svgAncestor = rawTarget.closest('svg');
+      if (svgAncestor) rawTarget = svgAncestor;
+    }
 
     if (!rawTarget) {
       this._highlight.style.display = 'none';

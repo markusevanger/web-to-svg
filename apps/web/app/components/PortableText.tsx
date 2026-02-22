@@ -38,14 +38,16 @@ export default function CustomPortableText({
 
         return (
           <figure className="my-8">
-            <Image
-              id={value.asset._ref}
-              alt={value.alt || ''}
-              width={672}
-              crop={value.crop}
-              mode="cover"
-              className="rounded-sm"
-            />
+            <div className="aspect-[3/2] w-full overflow-hidden rounded-sm">
+              <Image
+                id={value.asset._ref}
+                alt={value.alt || ''}
+                width={672}
+                crop={value.crop}
+                mode="cover"
+                className="size-full object-cover"
+              />
+            </div>
           </figure>
         )
       },
@@ -57,7 +59,7 @@ export default function CustomPortableText({
           {children}
           <a
             href={`#${value?._key}`}
-            className="absolute left-0 top-0 bottom-0 -ml-6 flex items-center opacity-0 group-hover:opacity-100 transition-opacity"
+            className="cursor-pointer absolute left-0 top-0 bottom-0 -ml-6 flex items-center opacity-0 group-hover:opacity-100 transition-opacity"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -83,7 +85,7 @@ export default function CustomPortableText({
             {children}
             <a
               href={`#${value?._key}`}
-              className="absolute left-0 top-0 bottom-0 -ml-6 flex items-center opacity-0 group-hover:opacity-100 transition-opacity"
+              className="cursor-pointer absolute left-0 top-0 bottom-0 -ml-6 flex items-center opacity-0 group-hover:opacity-100 transition-opacity"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"

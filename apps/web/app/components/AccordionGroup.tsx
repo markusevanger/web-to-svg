@@ -22,7 +22,7 @@ function AccordionItem({item}: {item: AccordionItem}) {
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className="flex w-full cursor-pointer items-center justify-between py-4 font-medium select-none text-left"
+        className="flex w-full cursor-pointer items-center justify-between py-4 font-medium select-none text-left hover:bg-gray-50 transition-colors duration-200 rounded"
       >
         {item.title}
         <svg

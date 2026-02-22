@@ -81,20 +81,20 @@ export default async function PostPage(props: Props) {
               </div>
             </div>
             <article className="gap-6 grid max-w-4xl">
-              <div className="">
-                {post?.coverImage && (
+              {post?.coverImage && (
+                <div className="aspect-[3/2] w-screen overflow-hidden rounded-sm relative left-1/2 -ml-[50vw] max-w-none">
                   <Image
                     id={post.coverImage.asset?._ref || ''}
                     alt={post.coverImage.alt || ''}
-                    className="rounded-sm w-full"
+                    className="size-full object-cover"
                     width={1024}
                     height={538}
                     mode="cover"
                     hotspot={post.coverImage.hotspot}
                     crop={post.coverImage.crop}
                   />
-                )}
-              </div>
+                </div>
+              )}
               {post.content?.length && (
                 <PortableText
                   className="max-w-2xl prose-headings:font-medium prose-headings:tracking-tight"

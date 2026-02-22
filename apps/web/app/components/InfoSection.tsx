@@ -13,7 +13,7 @@ type InfoProps = {
 
 export default function CTA({block}: InfoProps) {
   return (
-    <div className="container my-12">
+    <section className="px-6 lg:px-28 py-16">
       <div className="max-w-3xl">
         {block?.heading && <h2 className="text-2xl md:text-3xl lg:text-4xl">{block.heading}</h2>}
         {block?.subheading && (
@@ -27,6 +27,6 @@ export default function CTA({block}: InfoProps) {
           )}
         </div>
       </div>
-    </div>
+    </section>
   )
 }

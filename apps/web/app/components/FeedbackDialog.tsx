@@ -16,7 +16,7 @@ export default function FeedbackDialog() {
       <button
         onClick={toggle}
         aria-label="Send feedback"
-        className="fixed bottom-6 right-6 z-50 bg-primary text-black font-bold rounded-full px-5 py-3 text-sm shadow-lg hover:bg-primary-dark transition-colors duration-200 flex items-center gap-2"
+        className="cursor-pointer fixed bottom-6 right-6 z-50 bg-primary text-black font-bold rounded-full px-5 py-3 text-sm shadow-lg hover:bg-primary-dark transition-colors duration-200 flex items-center gap-2"
       >
         <LucideIcon name="message-square-plus" className="w-4 h-4" />
         <span className="hidden sm:inline">Feedback</span>
@@ -33,7 +33,7 @@ export default function FeedbackDialog() {
               <h3 className="text-sm font-bold tracking-tight">Send us feedback</h3>
               <button
                 onClick={close}
-                className="text-gray-400 hover:text-black transition-colors"
+                className="cursor-pointer text-gray-400 hover:text-black transition-colors"
               >
                 <LucideIcon name="x" className="w-4 h-4" />
               </button>

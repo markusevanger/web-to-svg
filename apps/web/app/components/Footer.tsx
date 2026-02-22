@@ -8,7 +8,7 @@ export default function Footer() {
       <div className="bg-white rounded-xl border border-gray-200 px-6 lg:px-12 py-12">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
           <div className="flex flex-col gap-3">
-            <Link href="/" className="flex items-center gap-2">
+            <Link href="/" className="cursor-pointer flex items-center gap-2">
               <Image
                 src="/images/webtosvg-logo.svg"
                 alt="Web to SVG"
@@ -51,6 +51,7 @@ export default function Footer() {
               href="https://markusevanger.no"
               target="_blank"
               rel="noopener noreferrer"
+              className="cursor-pointer"
             >
               <span className="inline-block px-1.5 py-0.5 rounded bg-primary text-black font-bold text-[10px]">
                 markusevanger.no

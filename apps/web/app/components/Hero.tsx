@@ -67,15 +67,15 @@ export default function Hero() {
         Click any element on a webpage and export it as a clean SVG or PNG file.
       </p>
 
-      <div className="flex flex-col sm:flex-row items-center gap-3 justify-center">
+      {/* <div className="flex flex-col sm:flex-row items-center gap-3 justify-center">
         <DemoButton label="Try Right Here" variant="primary" />
         <a
           href="#how-it-works"
-          className="inline-flex items-center gap-2 text-sm whitespace-nowrap border border-primary text-black font-normal rounded-full px-6 py-3 hover:bg-primary/10 transition-colors duration-200"
+          className="cursor-pointer inline-flex items-center gap-2 text-sm whitespace-nowrap border border-primary text-black font-normal rounded-full px-6 py-3 hover:bg-primary/10 transition-colors duration-200"
         >
           How it works
         </a>
-      </div>
+      </div> */}
     </section>
   );
 }

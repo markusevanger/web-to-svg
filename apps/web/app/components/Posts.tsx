@@ -17,7 +17,7 @@ const Post = ({post}: {post: AllPostsQueryResult[number]}) => {
       key={_id}
       className="border border-gray-200 rounded-sm p-6 bg-gray-50 flex flex-col justify-between transition-colors hover:bg-white relative"
     >
-      <Link className="hover:text-brand underline transition-colors" href={`/posts/${slug}`}>
+      <Link className="cursor-pointer hover:text-brand underline transition-colors" href={`/posts/${slug}`}>
         <span className="absolute inset-0 z-10" />
       </Link>
       <div>

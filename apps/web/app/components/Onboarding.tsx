@@ -39,7 +39,7 @@ const OnboardingMessage = ({message, link, type, path}: OnboardingMessageProps) 
       <div>
         {!isPresentation ? (
           <Link
-            className="inline-flex rounded-full gap-2 items-center bg-white text-brand hover:bg-brand focus:bg-brand hover:text-white focus:text-white py-3 px-6 transition-colors duration-200"
+            className="cursor-pointer inline-flex rounded-full gap-2 items-center bg-white text-brand hover:bg-brand focus:bg-brand hover:text-white focus:text-white py-3 px-6 transition-colors duration-200"
             href={link.href}
             target="_blank"
           >

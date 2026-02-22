@@ -69,18 +69,28 @@ export default function Steps({block}: StepsProps) {
           ) : null}
         </div>
 
-        <div className={isImageFirst && image ? 'lg:order-1' : ''}>
+        <div
+          className={`${isImageFirst && image ? 'lg:order-1' : ''} ${
+            isImageFirst ? 'lg:-ml-28 lg:pl-0' : 'lg:-mr-28 lg:pr-0'
+          }`}
+        >
           {image?.asset?._ref ? (
-            <Image
-              id={image.asset._ref}
-              alt="Steps illustration"
-              width={704}
-              crop={image.crop}
-              mode="cover"
-              className="rounded-xl"
-            />
+            <div
+              className={`aspect-[3/2] w-full overflow-hidden rounded-xl lg:w-[calc(100%+7rem)] ${
+                isImageFirst ? 'lg:ml-auto' : ''
+              }`}
+            >
+              <Image
+                id={image.asset._ref}
+                alt="Steps illustration"
+                width={1200}
+                crop={image.crop}
+                mode="cover"
+                className="size-full object-cover"
+              />
+            </div>
           ) : (
-            <div className="bg-placeholder rounded-xl aspect-video" />
+            <div className="bg-placeholder rounded-xl aspect-[3/2] w-full" />
           )}
         </div>
       </div>

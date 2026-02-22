@@ -14,7 +14,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="w-full bg-primary text-black font-bold rounded-full px-6 py-3 text-sm hover:bg-primary-dark transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+      className="w-full cursor-pointer bg-primary text-black font-bold rounded-full px-6 py-3 text-sm hover:bg-primary-dark transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {pending ? 'Sending...' : 'Send Feedback'}
     </button>
@@ -125,7 +125,7 @@ export default function FeedbackForm({onSuccess}: {onSuccess?: () => void}) {
             <button
               type="button"
               onClick={removeImage}
-              className="absolute -top-2 -right-2 w-6 h-6 bg-gray-900 text-white rounded-full flex items-center justify-center"
+              className="cursor-pointer absolute -top-2 -right-2 w-6 h-6 bg-gray-900 text-white rounded-full flex items-center justify-center hover:bg-gray-700 transition-colors duration-200"
             >
               <LucideIcon name="x" className="w-3 h-3" />
             </button>

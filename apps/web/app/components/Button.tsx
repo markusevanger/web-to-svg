@@ -13,9 +13,9 @@ type ButtonProps = {
 
 const variantStyles = {
   primary:
-    'bg-primary text-black font-bold rounded-full px-6 py-3 hover:bg-primary-dark transition-colors duration-200',
+    'cursor-pointer bg-primary text-black font-bold rounded-full px-6 py-3 hover:bg-primary-dark transition-colors duration-200',
   secondary:
-    'border border-primary text-black font-normal rounded-full px-6 py-3 hover:bg-primary/10 transition-colors duration-200',
+    'cursor-pointer border border-primary text-black font-normal rounded-full px-6 py-3 hover:bg-primary/10 transition-colors duration-200',
 }
 
 export default function Button({

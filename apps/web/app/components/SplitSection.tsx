@@ -35,7 +35,9 @@ export default function SplitSection({block}: SplitSectionProps) {
           ) : null}
         </div>
 
-        <div className={isMediaFirst ? 'lg:order-1' : ''}>
+        <div
+          className={`${isMediaFirst ? 'lg:order-1' : ''} overflow-hidden`}
+        >
           {stegaClean(mediaType) === 'video' ? (
             videoUrl ? (
               <iframe
@@ -46,9 +48,11 @@ export default function SplitSection({block}: SplitSectionProps) {
               />
             ) : video?.asset?._ref ? (
               <video
-                controls
-                className="w-full rounded-xl"
-                preload="metadata"
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full rounded-xl object-cover"
               >
                 <source src={`https://cdn.sanity.io/files/wdqtle79/production/${video.asset._ref.replace('file-', '').replace('-', '.')}`} />
               </video>
@@ -56,16 +60,18 @@ export default function SplitSection({block}: SplitSectionProps) {
               <div className="bg-placeholder rounded-xl aspect-video" />
             )
           ) : image?.asset?._ref ? (
-            <Image
-              id={image.asset._ref}
-              alt={heading || 'Section image'}
-              width={704}
-              crop={image.crop}
-              mode="cover"
-              className="rounded-xl"
-            />
+            <div className="aspect-[3/2] w-full overflow-hidden rounded-xl">
+              <Image
+                id={image.asset._ref}
+                alt={heading || 'Section image'}
+                width={1200}
+                crop={image.crop}
+                mode="cover"
+                className="size-full object-cover"
+              />
+            </div>
           ) : (
-            <div className="bg-placeholder rounded-xl aspect-video" />
+            <div className="bg-placeholder rounded-xl aspect-[3/2] w-full" />
           )}
         </div>
       </div>

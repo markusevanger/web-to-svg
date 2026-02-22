@@ -34,7 +34,7 @@ export default async function Header() {
     <header className="fixed z-50 h-24 inset-0 flex items-center">
       <div className="container py-6 px-2 sm:px-6">
         <div className="flex items-center justify-between gap-5">
-          <Link className="flex items-center gap-2" href="/">
+          <Link className="cursor-pointer flex items-center gap-2" href="/">
             <Image
               src="/images/webtosvg-logo.svg"
               alt={settings?.title || 'Web to SVG'}

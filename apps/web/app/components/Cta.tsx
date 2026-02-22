@@ -23,7 +23,7 @@ export default function CTA({block}: CtaProps) {
   return (
     <section className={isDark ? 'relative dark dark:bg-black' : 'relative dark:bg-black'}>
       <div className="absolute inset-0 bg-size-[5px] bg-[url(/images/tile-1-black.png)] dark:bg-[url(/images/tile-1-white.png)] opacity-25" />
-      <div className="container relative">
+      <div className="relative px-6 lg:px-28">
         <div className="grid lg:grid-cols-2 gap-12 py-12">
           <div
             className={`${isImageFirst && image ? 'row-start-2 lg:row-start-1 lg:col-start-2' : ''} flex flex-col gap-2 `}
@@ -46,7 +46,7 @@ export default function CTA({block}: CtaProps) {
               <div className="flex mt-4">
                 <ResolvedLink
                   link={button?.link}
-                  className="rounded-full flex gap-2 font-mono text-sm whitespace-nowrap items-center bg-black dark:bg-white hover:bg-blue focus:bg-blue py-3 px-6 text-white dark:text-black dark:hover:text-white transition-colors duration-200"
+                  className="cursor-pointer rounded-full flex gap-2 font-mono text-sm whitespace-nowrap items-center bg-black dark:bg-white hover:bg-blue focus:bg-blue py-3 px-6 text-white dark:text-black dark:hover:text-white transition-colors duration-200"
                 >
                   {button?.buttonText}
                 </ResolvedLink>
@@ -55,14 +55,22 @@ export default function CTA({block}: CtaProps) {
           </div>
 
           {image?.asset?._ref && (
-            <Image
-              id={image.asset._ref}
-              alt="Demo image"
-              width={704}
-              crop={image.crop}
-              mode="cover"
-              className="rounded-sm"
-            />
+            <div
+              className={`aspect-[3/2] w-full min-w-0 overflow-hidden rounded-sm ${
+                isImageFirst
+                  ? '-ml-8 w-[calc(100%+2rem)]'
+                  : '-mr-8 w-[calc(100%+2rem)]'
+              }`}
+            >
+              <Image
+                id={image.asset._ref}
+                alt="Demo image"
+                width={1200}
+                crop={image.crop}
+                mode="cover"
+                className="size-full object-cover"
+              />
+            </div>
           )}
         </div>
       </div>

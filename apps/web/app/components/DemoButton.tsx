@@ -45,7 +45,7 @@ export default function DemoButton({label, icon, iconPosition = 'right', variant
   return (
     <button
       onClick={handleToggle}
-      className={`inline-flex items-center gap-2 text-sm whitespace-nowrap rounded-full px-6 py-3 transition-colors duration-200 ${
+      className={`cursor-pointer inline-flex items-center gap-2 text-sm whitespace-nowrap rounded-full px-6 py-3 transition-colors duration-200 ${
         active
           ? 'bg-gray-800 text-white hover:bg-gray-700 font-bold'
           : variant === 'primary'
