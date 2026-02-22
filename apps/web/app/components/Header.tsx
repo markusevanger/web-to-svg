@@ -13,7 +13,7 @@ export default async function Header() {
     {
       _key: 'feedback',
       buttonText: 'Feedback',
-      link: {linkType: 'internal' as const, slug: 'feedback'},
+      link: {_type: 'link' as const, linkType: 'page' as const, page: 'feedback'},
       variant: 'secondary' as const,
     },
     ...(settings?.headerButton?.buttonText && settings?.headerButton?.link
