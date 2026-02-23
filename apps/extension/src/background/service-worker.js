@@ -2,6 +2,8 @@ function injectContentScript(tabId) {
   chrome.scripting.executeScript({
     target: { tabId },
     files: ['content/content.bundle.js'],
+  }).catch((err) => {
+    console.warn('[Web to SVG] Could not inject content script:', err.message);
   });
 }
 
@@ -11,6 +13,11 @@ chrome.runtime.onInstalled.addListener(() => {
     id: 'web-to-svg',
     title: 'Web to SVG',
     contexts: ['page', 'image', 'video'],
+  }, () => {
+    if (chrome.runtime.lastError) {
+      // Duplicate ID on extension update — safe to ignore
+      console.debug('[Web to SVG] Context menu:', chrome.runtime.lastError.message);
+    }
   });
 });
 
@@ -23,6 +30,10 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'start-picker') {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (chrome.runtime.lastError) {
+        console.warn('[Web to SVG] Tab query failed:', chrome.runtime.lastError.message);
+        return;
+      }
       if (tabs[0]?.id) {
         injectContentScript(tabs[0].id);
       }
@@ -35,6 +46,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       url: message.dataUrl,
       filename: message.filename,
       saveAs: false,
+    }, (downloadId) => {
+      if (chrome.runtime.lastError) {
+        console.warn('[Web to SVG] Download failed:', chrome.runtime.lastError.message);
+        sendResponse?.({ error: chrome.runtime.lastError.message });
+      }
     });
     return;
   }

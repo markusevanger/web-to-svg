@@ -1,7 +1,10 @@
 {
   "manifest_version": 3,
   "name": "Web to SVG",
+  "short_name": "Web to SVG",
   "version": "1.0.0",
+  "author": "Markus Evanger",
+  "homepage_url": "https://webtosvg.com",
   "description": "Click any element on a webpage and export it as a clean SVG or PNG.",
   "permissions": ["activeTab", "scripting", "downloads", "clipboardWrite", "storage", "contextMenus"],
   "host_permissions": ["<all_urls>"],

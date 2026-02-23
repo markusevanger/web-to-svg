@@ -347,11 +347,16 @@ async function collectElementMetadata(root) {
     }
   }
 
-  await Promise.allSettled([...imgJobs, ...bgJobs]);
+  const results = await Promise.allSettled([...imgJobs, ...bgJobs]);
+  const failed = results.filter((r) => r.status === 'rejected');
+  if (failed.length > 0) {
+    console.warn(`[Web to SVG] ${failed.length}/${results.length} resource(s) failed to inline`);
+  }
 
   return {
     radiiMap,
     outlines,
+    inlineFailures: failed.length,
     restoreImages: () => restorers.forEach((fn) => fn()),
   };
 }
@@ -646,10 +651,15 @@ export async function convertElementToSVG(element) {
     try {
       svgDocument = elementToSVG(element);
 
-      await Promise.race([
-        inlineResources(svgDocument.documentElement),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Inlining resources timed out')), 10000)),
-      ]);
+      try {
+        await Promise.race([
+          inlineResources(svgDocument.documentElement),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Inlining resources timed out')), 10000)),
+        ]);
+      } catch (inlineErr) {
+        console.warn('[Web to SVG] Resource inlining incomplete:', inlineErr.message);
+        // Continue with partially-inlined SVG rather than failing entirely
+      }
     } finally {
       restoreImages();
     }
@@ -691,6 +701,12 @@ export async function convertElementToSVG(element) {
   // --- For non-generic branches (SVG, IMG, CANVAS, VIDEO): parse → pipeline → serialize ---
   const parser = new DOMParser();
   const svgDoc = parser.parseFromString(svgString, 'image/svg+xml');
+
+  // Validate parsed SVG — DOMParser returns a <parsererror> document on invalid input
+  if (svgDoc.querySelector('parsererror')) {
+    console.warn('[Web to SVG] SVG parse error, returning raw SVG string');
+    return svgString;
+  }
 
   if (settings.captureBackground && bgColor) {
     insertBackgroundRectDoc(svgDoc, bgColor);

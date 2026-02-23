@@ -63,11 +63,11 @@ export default function Hero() {
         </h1>
       </div>
 
-      <p className="text-sm md:text-base text-center max-w-2xl">
+      <p className="text-sm md:text-base text-center max-w-2xl text-balance">
         Click any element on a webpage and export it as a clean SVG or PNG file.
       </p>
 
-      {/* <div className="flex flex-col sm:flex-row items-center gap-3 justify-center">
+      <div className="flex flex-col sm:flex-row items-center gap-3 justify-center">
         <DemoButton label="Try Right Here" variant="primary" />
         <a
           href="#how-it-works"
@@ -75,7 +75,7 @@ export default function Hero() {
         >
           How it works
         </a>
-      </div> */}
+      </div>
     </section>
   );
 }

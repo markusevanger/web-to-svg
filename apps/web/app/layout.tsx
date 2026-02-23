@@ -73,7 +73,7 @@ export default async function RootLayout({children}: {children: React.ReactNode}
   return (
     <html lang="en" className={`${splineSansMono.variable} ${tiro.variable} bg-white text-black`}>
       <body className="bg-dots">
-        <section className="min-h-screen pt-24">
+        <div className="min-h-screen pt-24">
           {/* The <Toaster> component is responsible for rendering toast notifications used in /app/client-utils.ts and /app/components/DraftModeToast.tsx */}
           <Toaster />
           {isDraftMode && (
@@ -88,7 +88,7 @@ export default async function RootLayout({children}: {children: React.ReactNode}
           <Header />
           <main className="">{children}</main>
           <Footer />
-        </section>
+        </div>
         <SpeedInsights />
       </body>
     </html>

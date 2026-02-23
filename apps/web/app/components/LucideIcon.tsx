@@ -1,59 +1,19 @@
-import {
-  Chrome,
-  ArrowRight,
-  Download,
-  ExternalLink,
-  Plus,
-  ArrowLeft,
-  Check,
-  ChevronRight,
-  Play,
-  Zap,
-  MessageSquarePlus,
-  X,
-  ImagePlus,
-  Layers,
-  MousePointerClick,
-  Palette,
-  FileCode,
-  Sparkles,
-  Eye,
-  Copy,
-  Settings,
-  type LucideProps,
-} from 'lucide-react'
-import type {ComponentType} from 'react'
-
-const iconMap: Record<string, ComponentType<LucideProps>> = {
-  chrome: Chrome,
-  'arrow-right': ArrowRight,
-  'arrow-left': ArrowLeft,
-  download: Download,
-  'external-link': ExternalLink,
-  plus: Plus,
-  check: Check,
-  'chevron-right': ChevronRight,
-  play: Play,
-  zap: Zap,
-  'message-square-plus': MessageSquarePlus,
-  x: X,
-  'image-plus': ImagePlus,
-  layers: Layers,
-  'mouse-pointer-click': MousePointerClick,
-  palette: Palette,
-  'file-code': FileCode,
-  sparkles: Sparkles,
-  eye: Eye,
-  copy: Copy,
-  settings: Settings,
-}
+import {icons, type LucideProps} from 'lucide-react'
 
 interface LucideIconProps extends LucideProps {
   name: string
 }
 
+function toPascalCase(name: string): string {
+  return name
+    .split('-')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join('')
+}
+
 export default function LucideIcon({name, ...props}: LucideIconProps) {
-  const Icon = iconMap[name]
+  const pascalName = toPascalCase(name)
+  const Icon = icons[pascalName as keyof typeof icons]
   if (!Icon) return null
   return <Icon {...props} />
 }

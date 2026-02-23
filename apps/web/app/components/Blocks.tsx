@@ -37,7 +37,7 @@ export default function Blocks({block}: BlocksProps) {
       )}
 
       {items?.length ? (
-        <div className="grid sm:grid-cols-2 gap-8">
+        <div className="grid sm:grid-cols-2 gap-8 mx-auto max-w-2xl">
           {items.map((item) => {
             const iconName = stegaClean(item.icon)
             const mediaType = stegaClean(item.mediaType)
@@ -46,14 +46,14 @@ export default function Blocks({block}: BlocksProps) {
             return (
               <div
                 key={item._key}
-                className="flex flex-col items-center text-center p-8 rounded-xl border border-gray-100 bg-white"
+                className="flex flex-col items-center text-center p-8 rounded-xl border border-gray-100 bg-white aspect-square justify-center"
               >
                 {isImage && item.image?.asset?._ref ? (
-                  <div className="mb-6 aspect-[3/2] w-24 overflow-hidden">
+                  <div className="mb-6 aspect-square w-full overflow-hidden rounded-lg">
                     <Image
                       id={item.image.asset._ref}
                       alt={item.title || ''}
-                      width={96}
+                      width={400}
                       crop={item.image.crop}
                       mode="cover"
                       className="size-full object-cover"

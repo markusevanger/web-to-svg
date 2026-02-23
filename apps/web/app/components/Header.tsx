@@ -3,6 +3,7 @@ import Link from 'next/link'
 import {settingsQuery} from '@/sanity/lib/queries'
 import {sanityFetch} from '@/sanity/lib/live'
 import ButtonGroup from '@/app/components/ButtonGroup'
+import {DereferencedLink} from '@/sanity/lib/types'
 
 export default async function Header() {
   const {data: settings} = await sanityFetch({
@@ -21,7 +22,7 @@ export default async function Header() {
           {
             _key: 'header-cta',
             buttonText: settings.headerButton.buttonText,
-            link: settings.headerButton.link as any,
+            link: settings.headerButton.link as DereferencedLink,
             variant: (settings.headerButton.variant || 'primary') as 'primary' | 'secondary',
             icon: settings.headerButton.icon || undefined,
             iconPosition: (settings.headerButton.iconPosition || 'right') as 'left' | 'right',

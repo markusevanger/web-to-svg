@@ -407,8 +407,11 @@ import contentCSS from './content.css';
       try {
         await navigator.clipboard.writeText(state.svg);
         showToast('SVG copied to clipboard');
-      } catch {
-        showToast('Copy failed \u2014 check permissions');
+      } catch (err) {
+        const reason = err?.name === 'NotAllowedError'
+          ? 'clipboard permission denied'
+          : err?.message || 'unknown error';
+        showToast(`Copy failed: ${reason}`);
       }
     }
     pinnedCopySvg = copySvg;
@@ -802,8 +805,10 @@ import contentCSS from './content.css';
         showScrollCursor();
       } catch (err) {
         console.warn('[Web to SVG] Preview conversion failed:', err);
-        loader.style.display = 'none';
         loaderBar.classList.remove('ets-loader-bar-pulse');
+        loaderBar.style.display = 'none';
+        loaderLabel.textContent = 'Preview failed \u2014 click to retry';
+        loader.style.display = 'flex';
       }
     }, 500);
   }

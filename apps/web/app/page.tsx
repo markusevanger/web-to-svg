@@ -1,21 +1,26 @@
 import type {Metadata} from 'next'
 
 import Hero from '@/app/components/Hero'
+import PageBuilderPage from '@/app/components/PageBuilder'
+import {sanityFetch} from '@/sanity/lib/live'
+import {getPageQuery} from '@/sanity/lib/queries'
+import {GetPageQueryResult} from '@/sanity.types'
 
 export const metadata: Metadata = {
   title: 'Web to SVG',
   description: 'Click any element on a webpage and export it as a clean SVG or PNG file.',
 }
 
-export default function Page() {
+export default async function Page() {
+  const {data: page} = await sanityFetch({
+    query: getPageQuery,
+    params: {slug: 'home'},
+  })
+
   return (
     <>
       <Hero />
-      <div className="flex flex-col items-center gap-4 pb-24">
-        <span className="inline-block px-4 py-2 rounded-full border border-gray-200 text-sm text-gray-500">
-          Coming soon
-        </span>
-      </div>
+      {page && <PageBuilderPage page={page as GetPageQueryResult} />}
     </>
   )
 }

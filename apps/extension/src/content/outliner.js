@@ -112,15 +112,24 @@ let fontFaceUrlCache = null;
 const FONT_CACHE_MAX = 30;
 const fontCache = new Map();
 
+/** How long (ms) to cache a font load failure before retrying */
+const FONT_FAIL_TTL = 60_000;
+
 async function loadFont(url) {
   if (fontCache.has(url)) {
     const cached = fontCache.get(url);
-    // null means a previous parse failed — don't retry
-    if (cached === null) throw new Error(`Font previously failed to parse: ${url}`);
-    // Move to end (most recently used) by re-inserting
-    fontCache.delete(url);
-    fontCache.set(url, cached);
-    return cached;
+    // { failedAt } means a previous parse/fetch failed — retry after TTL
+    if (cached && cached.failedAt) {
+      if (Date.now() - cached.failedAt < FONT_FAIL_TTL) {
+        throw new Error(`Font previously failed (will retry after ${Math.ceil((FONT_FAIL_TTL - (Date.now() - cached.failedAt)) / 1000)}s): ${url}`);
+      }
+      fontCache.delete(url);
+    } else if (cached) {
+      // Move to end (most recently used) by re-inserting
+      fontCache.delete(url);
+      fontCache.set(url, cached);
+      return cached;
+    }
   }
   // Route through service worker to bypass CORS restrictions
   let buffer;
@@ -137,15 +146,18 @@ async function loadFont(url) {
   if (!buffer) {
     // Fallback: direct fetch (works for same-origin fonts)
     const resp = await fetch(url);
-    if (!resp.ok) throw new Error(`Font fetch failed: ${resp.status}`);
+    if (!resp.ok) {
+      fontCache.set(url, { failedAt: Date.now() });
+      throw new Error(`Font fetch failed: ${resp.status}`);
+    }
     buffer = await resp.arrayBuffer();
   }
   let font;
   try {
     font = opentype.parse(buffer);
   } catch (err) {
-    // Cache the failure so we don't re-fetch corrupt fonts
-    fontCache.set(url, null);
+    // Cache the failure with a TTL so it can be retried later
+    fontCache.set(url, { failedAt: Date.now() });
     if (fontCache.size > FONT_CACHE_MAX) {
       fontCache.delete(fontCache.keys().next().value);
     }

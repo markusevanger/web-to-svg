@@ -75,8 +75,10 @@ function cleanLayerIds(root) {
  */
 function collapseGroups(root) {
   // Multiple passes — collapsing may expose new collapsible groups
+  const MAX_PASSES = 50;
   let changed = true;
-  while (changed) {
+  let pass = 0;
+  while (changed && pass++ < MAX_PASSES) {
     changed = false;
     const groups = Array.from(root.querySelectorAll('g'));
     for (const g of groups) {

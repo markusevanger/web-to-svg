@@ -11,7 +11,7 @@ type DemoButtonProps = {
 }
 
 export default function DemoButton({label, icon, iconPosition = 'right', variant = 'primary'}: DemoButtonProps) {
-  const pickerRef = useRef<any>(null)
+  const pickerRef = useRef<{ deactivate: () => void } | null>(null)
   const [active, setActive] = useState(false)
 
   const handleToggle = useCallback(async () => {

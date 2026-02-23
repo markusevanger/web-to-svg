@@ -34,6 +34,7 @@ function RenderSections({
   }
   return (
     <div
+      className="max-w-7xl mx-auto"
       data-sanity={dataAttr({
         id: page._id,
         type: page._type,
