@@ -38,6 +38,13 @@ export const callToAction = defineType({
   ],
   fields: [
     defineField({
+      name: 'anchor',
+      title: 'Anchor ID',
+      type: 'string',
+      description: 'Used for in-page linking (e.g. "pricing" becomes #pricing)',
+      group: 'designSystem',
+    }),
+    defineField({
       name: 'eyebrow',
       title: 'Eyebrow',
       type: 'string',

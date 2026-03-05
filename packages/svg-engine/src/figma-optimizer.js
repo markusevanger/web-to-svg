@@ -61,8 +61,12 @@ function cleanLayerIds(root) {
     const id = el.getAttribute('id');
     if (noisePattern.test(id)) {
       // Only remove if nothing in the document references this id
-      if (!root.querySelector(`[href="#${CSS.escape(id)}"], [xlink\\:href="#${CSS.escape(id)}"], [clip-path="url(#${CSS.escape(id)})"], [mask="url(#${CSS.escape(id)})"]`)) {
-        el.removeAttribute('id');
+      try {
+        if (!root.querySelector(`[href="#${CSS.escape(id)}"], [xlink\\:href="#${CSS.escape(id)}"], [clip-path="url(#${CSS.escape(id)})"], [mask="url(#${CSS.escape(id)})"]`)) {
+          el.removeAttribute('id');
+        }
+      } catch {
+        // querySelector can throw on IDs with unusual characters
       }
     }
   }
@@ -268,7 +272,7 @@ function normalizeToOrigin(svg) {
   if (!vb) return;
 
   const parts = vb.split(/[\s,]+/).map(Number);
-  if (parts.length !== 4) return;
+  if (parts.length !== 4 || parts.some(v => !Number.isFinite(v))) return;
   const [minX, minY, w, h] = parts;
 
   // Already at origin

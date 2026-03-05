@@ -44,10 +44,11 @@ export type PostReference = {
 
 export type Link = {
   _type: "link";
-  linkType?: "href" | "page" | "post" | "demo";
+  linkType?: "href" | "page" | "post" | "anchor" | "demo";
   href?: string;
   page?: PageReference;
   post?: PostReference;
+  anchor?: string;
   openInNewTab?: boolean;
 };
 
@@ -59,6 +60,33 @@ export type AccordionGroup = {
     _type: "accordionItem";
     _key: string;
   }>;
+};
+
+export type SanityFileAssetReference = {
+  _ref: string;
+  _type: "reference";
+  _weak?: boolean;
+  [internalGroqTypeReferenceTo]?: "sanity.fileAsset";
+};
+
+export type MediaSection = {
+  _type: "mediaSection";
+  anchor?: string;
+  mediaType?: "image" | "video";
+  image?: {
+    asset?: SanityImageAssetReference;
+    media?: unknown;
+    hotspot?: SanityImageHotspot;
+    crop?: SanityImageCrop;
+    _type: "image";
+  };
+  video?: {
+    asset?: SanityFileAssetReference;
+    media?: unknown;
+    _type: "file";
+  };
+  videoUrl?: string;
+  caption?: string;
 };
 
 export type ButtonGroup = {
@@ -73,6 +101,7 @@ export type ButtonGroup = {
 
 export type Blocks = {
   _type: "blocks";
+  anchor?: string;
   heading?: string;
   items?: Array<{
     mediaType?: "icon" | "image";
@@ -100,6 +129,7 @@ export type Blocks = {
 
 export type Steps = {
   _type: "steps";
+  anchor?: string;
   heading: string;
   steps?: Array<{
     text?: Array<{
@@ -133,19 +163,13 @@ export type Steps = {
   contentAlignment?: "textFirst" | "imageFirst";
 };
 
-export type SanityFileAssetReference = {
-  _ref: string;
-  _type: "reference";
-  _weak?: boolean;
-  [internalGroqTypeReferenceTo]?: "sanity.fileAsset";
-};
-
 export type SplitSection = {
   _type: "splitSection";
+  anchor?: string;
   heading: string;
   subheading?: string;
   content?: BlockContent;
-  mediaType?: "image" | "video";
+  mediaType?: "image" | "video" | "shapes";
   image?: {
     asset?: SanityImageAssetReference;
     media?: unknown;
@@ -159,11 +183,13 @@ export type SplitSection = {
     _type: "file";
   };
   videoUrl?: string;
+  shapeCount?: number;
   contentAlignment?: "textFirst" | "imageFirst";
 };
 
 export type CallToAction = {
   _type: "callToAction";
+  anchor?: string;
   eyebrow?: string;
   heading: string;
   body?: BlockContentTextOnly;
@@ -181,6 +207,7 @@ export type CallToAction = {
 
 export type InfoSection = {
   _type: "infoSection";
+  anchor?: string;
   heading?: string;
   subheading?: string;
   content?: BlockContent;
@@ -328,6 +355,7 @@ export type Settings = {
     _key: string;
   }>;
   headerButton?: Button;
+  demoFallbackButton?: Button;
   ogImage?: {
     asset?: SanityImageAssetReference;
     media?: unknown;
@@ -365,6 +393,9 @@ export type Page = {
     | ({
         _key: string;
       } & Blocks)
+    | ({
+        _key: string;
+      } & MediaSection)
   >;
 };
 
@@ -607,14 +638,14 @@ export type SanityFileAsset = {
   title?: string;
   description?: string;
   altText?: string;
-  sha1hash?: string;
-  extension?: string;
-  mimeType?: string;
-  size?: number;
-  assetId?: string;
+  sha1hash: string;
+  extension: string;
+  mimeType: string;
+  size: number;
+  assetId: string;
   uploadId?: string;
-  path?: string;
-  url?: string;
+  path: string;
+  url: string;
   source?: SanityAssetSourceData;
 };
 
@@ -636,14 +667,14 @@ export type SanityImageAsset = {
   title?: string;
   description?: string;
   altText?: string;
-  sha1hash?: string;
-  extension?: string;
-  mimeType?: string;
-  size?: number;
-  assetId?: string;
+  sha1hash: string;
+  extension: string;
+  mimeType: string;
+  size: number;
+  assetId: string;
   uploadId?: string;
-  path?: string;
-  url?: string;
+  path: string;
+  url: string;
   metadata?: SanityImageMetadata;
   source?: SanityAssetSourceData;
 };
@@ -662,10 +693,11 @@ export type AllSanitySchemaTypes =
   | PostReference
   | Link
   | AccordionGroup
+  | SanityFileAssetReference
+  | MediaSection
   | ButtonGroup
   | Blocks
   | Steps
-  | SanityFileAssetReference
   | SplitSection
   | CallToAction
   | InfoSection
@@ -707,7 +739,7 @@ export declare const internalGroqTypeReferenceTo: unique symbol;
 
 // Source: sanity/lib/queries.ts
 // Variable: settingsQuery
-// Query: *[_type == "settings"][0]{  ...,  headerButton {    ...,      link {      ...,        _type == "link" => {    "page": page->slug.current,    "post": post->slug.current  }      }  }}
+// Query: *[_type == "settings"][0]{  ...,  headerButton {    ...,      link {      ...,        _type == "link" => {    "page": page->slug.current,    "post": post->slug.current  }      }  },  demoFallbackButton {    ...,      link {      ...,        _type == "link" => {    "page": page->slug.current,    "post": post->slug.current  }      }  }}
 export type SettingsQueryResult = {
   _id: string;
   _type: "settings";
@@ -742,10 +774,27 @@ export type SettingsQueryResult = {
     buttonText?: string;
     link: {
       _type: "link";
-      linkType?: "demo" | "href" | "page" | "post";
+      linkType?: "anchor" | "demo" | "href" | "page" | "post";
       href?: string;
       page: string | null;
       post: string | null;
+      anchor?: string;
+      openInNewTab?: boolean;
+    } | null;
+    variant?: "primary" | "secondary";
+    icon?: string;
+    iconPosition?: "left" | "right";
+  } | null;
+  demoFallbackButton: {
+    _type: "button";
+    buttonText?: string;
+    link: {
+      _type: "link";
+      linkType?: "anchor" | "demo" | "href" | "page" | "post";
+      href?: string;
+      page: string | null;
+      post: string | null;
+      anchor?: string;
       openInNewTab?: boolean;
     } | null;
     variant?: "primary" | "secondary";
@@ -777,6 +826,7 @@ export type GetPageQueryResult = {
     | {
         _key: string;
         _type: "blocks";
+        anchor?: string;
         heading?: string;
         items?: Array<{
           mediaType?: "icon" | "image";
@@ -804,6 +854,7 @@ export type GetPageQueryResult = {
     | {
         _key: string;
         _type: "callToAction";
+        anchor?: string;
         eyebrow?: string;
         heading: string;
         body?: BlockContentTextOnly;
@@ -812,10 +863,11 @@ export type GetPageQueryResult = {
           buttonText?: string;
           link: {
             _type: "link";
-            linkType?: "demo" | "href" | "page" | "post";
+            linkType?: "anchor" | "demo" | "href" | "page" | "post";
             href?: string;
             page: string | null;
             post: string | null;
+            anchor?: string;
             openInNewTab?: boolean;
           } | null;
           variant?: "primary" | "secondary";
@@ -835,6 +887,7 @@ export type GetPageQueryResult = {
     | {
         _key: string;
         _type: "infoSection";
+        anchor?: string;
         heading?: string;
         subheading?: string;
         content: Array<
@@ -910,7 +963,28 @@ export type GetPageQueryResult = {
       }
     | {
         _key: string;
+        _type: "mediaSection";
+        anchor?: string;
+        mediaType?: "image" | "video";
+        image?: {
+          asset?: SanityImageAssetReference;
+          media?: unknown;
+          hotspot?: SanityImageHotspot;
+          crop?: SanityImageCrop;
+          _type: "image";
+        };
+        video?: {
+          asset?: SanityFileAssetReference;
+          media?: unknown;
+          _type: "file";
+        };
+        videoUrl?: string;
+        caption?: string;
+      }
+    | {
+        _key: string;
         _type: "splitSection";
+        anchor?: string;
         heading: string;
         subheading?: string;
         content: Array<
@@ -983,7 +1057,7 @@ export type GetPageQueryResult = {
               markDefs: null;
             }
         > | null;
-        mediaType?: "image" | "video";
+        mediaType?: "image" | "shapes" | "video";
         image?: {
           asset?: SanityImageAssetReference;
           media?: unknown;
@@ -997,12 +1071,14 @@ export type GetPageQueryResult = {
           _type: "file";
         };
         videoUrl?: string;
+        shapeCount?: number;
         contentAlignment?: "imageFirst" | "textFirst";
         buttonGroup: null;
       }
     | {
         _key: string;
         _type: "steps";
+        anchor?: string;
         heading: string;
         steps: Array<{
           text: Array<{
@@ -1238,7 +1314,7 @@ export type PagesSlugsResult = Array<{
 import "@sanity/client";
 declare module "@sanity/client" {
   interface SanityQueries {
-    '*[_type == "settings"][0]{\n  ...,\n  headerButton {\n    ...,\n    \n  link {\n      ...,\n      \n  _type == "link" => {\n    "page": page->slug.current,\n    "post": post->slug.current\n  }\n\n      }\n\n  }\n}': SettingsQueryResult;
+    '*[_type == "settings"][0]{\n  ...,\n  headerButton {\n    ...,\n    \n  link {\n      ...,\n      \n  _type == "link" => {\n    "page": page->slug.current,\n    "post": post->slug.current\n  }\n\n      }\n\n  },\n  demoFallbackButton {\n    ...,\n    \n  link {\n      ...,\n      \n  _type == "link" => {\n    "page": page->slug.current,\n    "post": post->slug.current\n  }\n\n      }\n\n  }\n}': SettingsQueryResult;
     '\n  *[_type == \'page\' && slug.current == $slug][0]{\n    _id,\n    _type,\n    name,\n    slug,\n    heading,\n    subheading,\n    "pageBuilder": pageBuilder[]{\n      ...,\n      _type == "callToAction" => {\n        ...,\n        button {\n          ...,\n          \n  link {\n      ...,\n      \n  _type == "link" => {\n    "page": page->slug.current,\n    "post": post->slug.current\n  }\n\n      }\n\n        }\n      },\n      _type == "infoSection" => {\n        content[]{\n          ...,\n          markDefs[]{\n            ...,\n            \n  _type == "link" => {\n    "page": page->slug.current,\n    "post": post->slug.current\n  }\n\n          }\n        }\n      },\n      _type == "splitSection" => {\n        ...,\n        content[]{\n          ...,\n          markDefs[]{\n            ...,\n            \n  _type == "link" => {\n    "page": page->slug.current,\n    "post": post->slug.current\n  }\n\n          }\n        },\n        buttonGroup {\n          ...,\n          buttons[]{\n            ...,\n            \n  link {\n      ...,\n      \n  _type == "link" => {\n    "page": page->slug.current,\n    "post": post->slug.current\n  }\n\n      }\n\n          }\n        }\n      },\n      _type == "steps" => {\n        ...,\n        steps[]{\n          ...,\n          text[]{\n            ...,\n            markDefs[]{\n              ...\n            }\n          }\n        }\n      },\n    },\n  }\n': GetPageQueryResult;
     '\n  *[_type == "page" || _type == "post" && defined(slug.current)] | order(_type asc) {\n    "slug": slug.current,\n    _type,\n    _updatedAt,\n  }\n': SitemapDataResult;
     '\n  *[_type == "post" && defined(slug.current)] | order(date desc, _updatedAt desc) {\n    \n  _id,\n  "status": select(_originalId in path("drafts.**") => "draft", "published"),\n  "title": coalesce(title, "Untitled"),\n  "slug": slug.current,\n  excerpt,\n  coverImage,\n  "date": coalesce(date, _updatedAt),\n  "author": author->{firstName, lastName, picture},\n\n  }\n': AllPostsQueryResult;

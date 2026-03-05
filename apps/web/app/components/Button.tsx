@@ -1,7 +1,10 @@
-import ResolvedLink from '@/app/components/ResolvedLink'
+'use client'
+
+import {useRouter} from 'next/navigation'
 import LucideIcon from '@/app/components/LucideIcon'
 import DemoButton from '@/app/components/DemoButton'
 import {DereferencedLink} from '@/sanity/lib/types'
+import {linkResolver} from '@/sanity/lib/utils'
 
 type ButtonProps = {
   buttonText?: string
@@ -25,26 +28,35 @@ export default function Button({
   icon,
   iconPosition = 'right',
 }: ButtonProps) {
+  const router = useRouter()
+
   if (link?.linkType === 'demo') {
     return <DemoButton label={buttonText} icon={icon} iconPosition={iconPosition} variant={variant} />
   }
 
   if (!buttonText || !link) return null
 
-  const content = (
-    <>
+  const href = linkResolver(link)
+
+  const handleClick = () => {
+    if (!href) return
+    if (link.linkType === 'href' || link.openInNewTab) {
+      window.open(href, '_blank', 'noopener,noreferrer')
+    } else if (link.linkType === 'anchor') {
+      window.location.hash = href
+    } else {
+      router.push(href)
+    }
+  }
+
+  return (
+    <button
+      onClick={handleClick}
+      className={`inline-flex items-center gap-2 text-sm whitespace-nowrap ${variantStyles[variant]}`}
+    >
       {icon && iconPosition === 'left' && <LucideIcon name={icon} className="w-5 h-5" />}
       <span>{buttonText}</span>
       {icon && iconPosition === 'right' && <LucideIcon name={icon} className="w-5 h-5" />}
-    </>
-  )
-
-  return (
-    <ResolvedLink
-      link={link}
-      className={`inline-flex items-center gap-2 text-sm whitespace-nowrap ${variantStyles[variant]}`}
-    >
-      {content}
-    </ResolvedLink>
+    </button>
   )
 }

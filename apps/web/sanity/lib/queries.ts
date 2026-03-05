@@ -30,6 +30,10 @@ export const settingsQuery = defineQuery(`*[_type == "settings"][0]{
   headerButton {
     ...,
     ${linkFields}
+  },
+  demoFallbackButton {
+    ...,
+    ${linkFields}
   }
 }`)
 

@@ -32,13 +32,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (chrome.runtime.lastError) {
         console.warn('[Web to SVG] Tab query failed:', chrome.runtime.lastError.message);
+        sendResponse?.({ error: chrome.runtime.lastError.message });
         return;
       }
       if (tabs[0]?.id) {
         injectContentScript(tabs[0].id);
+        sendResponse?.({ ok: true });
+      } else {
+        sendResponse?.({ error: 'No active tab found' });
       }
     });
-    return;
+    return true;
   }
 
   if (message.action === 'download') {
@@ -50,9 +54,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       if (chrome.runtime.lastError) {
         console.warn('[Web to SVG] Download failed:', chrome.runtime.lastError.message);
         sendResponse?.({ error: chrome.runtime.lastError.message });
+      } else {
+        sendResponse?.({ ok: true, downloadId });
       }
     });
-    return;
+    return true;
   }
 
   if (message.action === 'fetch-image') {

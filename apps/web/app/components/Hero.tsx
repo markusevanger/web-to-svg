@@ -1,7 +1,22 @@
 import Shape from "@/app/components/Shape";
-import DemoButton from "@/app/components/DemoButton";
+import HeroButtons from "@/app/components/HeroButtons";
+import {sanityFetch} from "@/sanity/lib/live";
+import {settingsQuery} from "@/sanity/lib/queries";
+import {DereferencedLink} from "@/sanity/lib/types";
 
-export default function Hero() {
+export default async function Hero() {
+  const {data: settings} = await sanityFetch({query: settingsQuery});
+
+  const fallbackButton = settings?.demoFallbackButton
+    ? {
+        buttonText: settings.demoFallbackButton.buttonText,
+        link: settings.demoFallbackButton.link as DereferencedLink | undefined,
+        variant: (settings.demoFallbackButton.variant || 'primary') as 'primary' | 'secondary',
+        icon: settings.demoFallbackButton.icon || undefined,
+        iconPosition: (settings.demoFallbackButton.iconPosition || 'right') as 'left' | 'right',
+      }
+    : undefined;
+
   return (
     <section className="min-h-[80vh] flex flex-col items-center justify-center gap-8 px-4 py-16 text-black">
       <div className="max-w-5xl w-full">
@@ -67,15 +82,7 @@ export default function Hero() {
         Click any element on a webpage and export it as a clean SVG or PNG file.
       </p>
 
-      <div className="flex flex-col sm:flex-row items-center gap-3 justify-center">
-        <DemoButton label="Try Right Here" variant="primary" />
-        <a
-          href="#how-it-works"
-          className="cursor-pointer inline-flex items-center gap-2 text-sm whitespace-nowrap border border-primary text-black font-normal rounded-full px-6 py-3 hover:bg-primary/10 transition-colors duration-200"
-        >
-          How it works
-        </a>
-      </div>
+      <HeroButtons fallbackButton={fallbackButton} />
     </section>
   );
 }

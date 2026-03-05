@@ -256,6 +256,7 @@ async function collectElementMetadata(root, fetchFn) {
   const outlines = [];
   const restorers = [];
 
+  // Note: querySelectorAll does not pierce Shadow DOM boundaries.
   const els = [root, ...root.querySelectorAll('*')];
 
   const imgJobs = [];
@@ -306,17 +307,20 @@ async function collectElementMetadata(root, fetchFn) {
     // --- CSS background-image inlining ---
     const bg = style.backgroundImage;
     if (bg && bg !== 'none') {
-      const urlMatch = bg.match(/url\(["']?(https?:\/\/[^"')]+)["']?\)/);
+      const urlMatch = bg.match(/url\(["']?([^"')]+)["']?\)/);
       if (urlMatch) {
-        const url = urlMatch[1];
-        bgJobs.push((async () => {
-          try {
-            const dataUrl = await fetchFn(url);
-            const origBg = el.style.backgroundImage;
-            el.style.backgroundImage = bg.replace(urlMatch[0], `url("${dataUrl}")`);
-            restorers.push(() => { el.style.backgroundImage = origBg; });
-          } catch (err) { console.debug('[Web to SVG] Background image inline failed:', err.message); }
-        })());
+        const rawUrl = urlMatch[1];
+        if (!rawUrl.startsWith('data:') && !rawUrl.startsWith('blob:')) {
+          const url = new URL(rawUrl, document.baseURI).href;
+          bgJobs.push((async () => {
+            try {
+              const dataUrl = await fetchFn(url);
+              const origBg = el.style.backgroundImage;
+              el.style.backgroundImage = bg.replace(urlMatch[0], `url("${dataUrl}")`);
+              restorers.push(() => { el.style.backgroundImage = origBg; });
+            } catch (err) { console.debug('[Web to SVG] Background image inline failed:', err.message); }
+          })());
+        }
       }
     }
   }
@@ -653,11 +657,19 @@ export async function convertElementToSVG(targetElement, adapter) {
     const rect = element.getBoundingClientRect();
     const w = Math.round(rect.width);
     const h = Math.round(rect.height);
-    const dataUrl = element.toDataURL('image/png');
+    let dataUrl;
+    try {
+      dataUrl = element.toDataURL('image/png');
+    } catch {
+      throw new Error('Canvas is cross-origin tainted and cannot be exported');
+    }
     svgString = wrapInSvgImage(dataUrl, w, h, getComputedStyle(element), element.width, element.height);
 
   // <video> handling
   } else if (tag === 'VIDEO') {
+    if (element.readyState < 2) {
+      throw new Error('Video has no frame data yet');
+    }
     const rect = element.getBoundingClientRect();
     const w = Math.round(rect.width);
     const h = Math.round(rect.height);
@@ -724,6 +736,11 @@ export async function convertElementToSVG(targetElement, adapter) {
   // --- For non-generic branches (SVG, IMG, CANVAS, VIDEO): parse → pipeline → serialize ---
   const parser = new DOMParser();
   const svgDoc = parser.parseFromString(svgString, 'image/svg+xml');
+
+  if (svgDoc.querySelector('parsererror')) {
+    console.warn('[Web to SVG] SVG parse error, returning raw SVG');
+    return svgString;
+  }
 
   if (settings.captureBackground && bgColor) {
     insertBackgroundRectDoc(svgDoc, bgColor);

@@ -44,10 +44,11 @@ export type PostReference = {
 
 export type Link = {
   _type: "link";
-  linkType?: "href" | "page" | "post" | "demo";
+  linkType?: "href" | "page" | "post" | "anchor" | "demo";
   href?: string;
   page?: PageReference;
   post?: PostReference;
+  anchor?: string;
   openInNewTab?: boolean;
 };
 
@@ -59,6 +60,33 @@ export type AccordionGroup = {
     _type: "accordionItem";
     _key: string;
   }>;
+};
+
+export type SanityFileAssetReference = {
+  _ref: string;
+  _type: "reference";
+  _weak?: boolean;
+  [internalGroqTypeReferenceTo]?: "sanity.fileAsset";
+};
+
+export type MediaSection = {
+  _type: "mediaSection";
+  anchor?: string;
+  mediaType?: "image" | "video";
+  image?: {
+    asset?: SanityImageAssetReference;
+    media?: unknown;
+    hotspot?: SanityImageHotspot;
+    crop?: SanityImageCrop;
+    _type: "image";
+  };
+  video?: {
+    asset?: SanityFileAssetReference;
+    media?: unknown;
+    _type: "file";
+  };
+  videoUrl?: string;
+  caption?: string;
 };
 
 export type ButtonGroup = {
@@ -73,6 +101,7 @@ export type ButtonGroup = {
 
 export type Blocks = {
   _type: "blocks";
+  anchor?: string;
   heading?: string;
   items?: Array<{
     mediaType?: "icon" | "image";
@@ -100,6 +129,7 @@ export type Blocks = {
 
 export type Steps = {
   _type: "steps";
+  anchor?: string;
   heading: string;
   steps?: Array<{
     text?: Array<{
@@ -133,19 +163,13 @@ export type Steps = {
   contentAlignment?: "textFirst" | "imageFirst";
 };
 
-export type SanityFileAssetReference = {
-  _ref: string;
-  _type: "reference";
-  _weak?: boolean;
-  [internalGroqTypeReferenceTo]?: "sanity.fileAsset";
-};
-
 export type SplitSection = {
   _type: "splitSection";
+  anchor?: string;
   heading: string;
   subheading?: string;
   content?: BlockContent;
-  mediaType?: "image" | "video";
+  mediaType?: "image" | "video" | "shapes";
   image?: {
     asset?: SanityImageAssetReference;
     media?: unknown;
@@ -159,11 +183,13 @@ export type SplitSection = {
     _type: "file";
   };
   videoUrl?: string;
+  shapeCount?: number;
   contentAlignment?: "textFirst" | "imageFirst";
 };
 
 export type CallToAction = {
   _type: "callToAction";
+  anchor?: string;
   eyebrow?: string;
   heading: string;
   body?: BlockContentTextOnly;
@@ -181,6 +207,7 @@ export type CallToAction = {
 
 export type InfoSection = {
   _type: "infoSection";
+  anchor?: string;
   heading?: string;
   subheading?: string;
   content?: BlockContent;
@@ -328,6 +355,7 @@ export type Settings = {
     _key: string;
   }>;
   headerButton?: Button;
+  demoFallbackButton?: Button;
   ogImage?: {
     asset?: SanityImageAssetReference;
     media?: unknown;
@@ -365,6 +393,9 @@ export type Page = {
     | ({
         _key: string;
       } & Blocks)
+    | ({
+        _key: string;
+      } & MediaSection)
   >;
 };
 
@@ -607,14 +638,14 @@ export type SanityFileAsset = {
   title?: string;
   description?: string;
   altText?: string;
-  sha1hash?: string;
-  extension?: string;
-  mimeType?: string;
-  size?: number;
-  assetId?: string;
+  sha1hash: string;
+  extension: string;
+  mimeType: string;
+  size: number;
+  assetId: string;
   uploadId?: string;
-  path?: string;
-  url?: string;
+  path: string;
+  url: string;
   source?: SanityAssetSourceData;
 };
 
@@ -636,14 +667,14 @@ export type SanityImageAsset = {
   title?: string;
   description?: string;
   altText?: string;
-  sha1hash?: string;
-  extension?: string;
-  mimeType?: string;
-  size?: number;
-  assetId?: string;
+  sha1hash: string;
+  extension: string;
+  mimeType: string;
+  size: number;
+  assetId: string;
   uploadId?: string;
-  path?: string;
-  url?: string;
+  path: string;
+  url: string;
   metadata?: SanityImageMetadata;
   source?: SanityAssetSourceData;
 };
@@ -662,10 +693,11 @@ export type AllSanitySchemaTypes =
   | PostReference
   | Link
   | AccordionGroup
+  | SanityFileAssetReference
+  | MediaSection
   | ButtonGroup
   | Blocks
   | Steps
-  | SanityFileAssetReference
   | SplitSection
   | CallToAction
   | InfoSection

@@ -8,6 +8,12 @@ export const infoSection = defineType({
   icon: TextIcon,
   fields: [
     defineField({
+      name: 'anchor',
+      title: 'Anchor ID',
+      type: 'string',
+      description: 'Used for in-page linking (e.g. "about" becomes #about)',
+    }),
+    defineField({
       name: 'heading',
       title: 'Heading',
       type: 'string',

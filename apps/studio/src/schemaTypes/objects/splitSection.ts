@@ -1,6 +1,6 @@
 import {defineField, defineType} from 'sanity'
 import {
-  BlockContentIcon,
+  SplitVerticalIcon,
   ComposeSparklesIcon,
   ImageIcon,
   ControlsIcon,
@@ -10,7 +10,7 @@ export const splitSection = defineType({
   name: 'splitSection',
   title: 'Split Section',
   type: 'object',
-  icon: BlockContentIcon,
+  icon: SplitVerticalIcon,
   groups: [
     {
       name: 'contents',
@@ -27,6 +27,13 @@ export const splitSection = defineType({
     },
   ],
   fields: [
+    defineField({
+      name: 'anchor',
+      title: 'Anchor ID',
+      type: 'string',
+      description: 'Used for in-page linking (e.g. "features" becomes #features)',
+      group: 'designSystem',
+    }),
     defineField({
       name: 'heading',
       title: 'Heading',
@@ -54,6 +61,7 @@ export const splitSection = defineType({
         list: [
           {title: 'Image', value: 'image'},
           {title: 'Video', value: 'video'},
+          {title: 'Animated Shapes', value: 'shapes'},
         ],
         layout: 'radio',
       },
@@ -67,7 +75,7 @@ export const splitSection = defineType({
       options: {
         hotspot: true,
       },
-      hidden: ({parent}) => parent?.mediaType === 'video',
+      hidden: ({parent}) => parent?.mediaType !== 'image',
       group: 'media',
     }),
     defineField({
@@ -86,6 +94,16 @@ export const splitSection = defineType({
       type: 'url',
       description: 'External video URL (e.g. YouTube, Vimeo embed URL)',
       hidden: ({parent}) => parent?.mediaType !== 'video',
+      group: 'media',
+    }),
+    defineField({
+      name: 'shapeCount',
+      title: 'Shape Count',
+      type: 'number',
+      description: 'Number of animated shapes to display',
+      initialValue: 6,
+      validation: (Rule) => Rule.min(1).max(20),
+      hidden: ({parent}) => parent?.mediaType !== 'shapes',
       group: 'media',
     }),
     defineField({
@@ -108,12 +126,14 @@ export const splitSection = defineType({
     select: {
       title: 'heading',
       subtitle: 'subheading',
+      mediaType: 'mediaType',
       image: 'image',
     },
-    prepare({title, subtitle, image}) {
+    prepare({title, subtitle, mediaType, image}) {
+      const mediaLabel = mediaType === 'video' ? 'Video' : mediaType === 'shapes' ? 'Shapes' : 'Image'
       return {
         title: title || 'Untitled Split Section',
-        subtitle: subtitle || 'Split Section',
+        subtitle: subtitle || `Split Section — ${mediaLabel}`,
         media: image || undefined,
       }
     },

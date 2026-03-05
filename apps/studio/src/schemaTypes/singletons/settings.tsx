@@ -14,12 +14,18 @@ export const settings = defineType({
   title: 'Settings',
   type: 'document',
   icon: CogIcon,
+  groups: [
+    {name: 'general', title: 'General', default: true},
+    {name: 'demo', title: 'Demo'},
+    {name: 'seo', title: 'SEO'},
+  ],
   fields: [
     defineField({
       name: 'title',
       description: 'This field is the title of your blog.',
       title: 'Title',
       type: 'string',
+      group: 'general',
       initialValue: demo.title,
       validation: (rule) => rule.required(),
     }),
@@ -28,6 +34,7 @@ export const settings = defineType({
       description: 'Used on the Homepage',
       title: 'Description',
       type: 'array',
+      group: 'general',
       initialValue: demo.description,
       of: [
         // Define a minified block content field for the description. https://www.sanity.io/docs/block-content
@@ -120,12 +127,23 @@ export const settings = defineType({
       title: 'Header Button',
       description: 'CTA button displayed in the site header (e.g. "Add to Chrome")',
       type: 'button',
+      group: 'general',
       options: {collapsible: true, collapsed: true},
+    }),
+    defineField({
+      name: 'demoFallbackButton',
+      title: 'Demo Fallback Button',
+      description:
+        'Shown instead of the demo button when the user cannot use the extension (e.g. mobile, non-Chrome browsers). Typically links to the Chrome Web Store.',
+      type: 'button',
+      group: 'demo',
+      options: {collapsible: true, collapsed: false},
     }),
     defineField({
       name: 'ogImage',
       title: 'Open Graph Image',
       type: 'image',
+      group: 'seo',
       description: 'Displayed on social cards and search engine results.',
       options: {
         hotspot: true,

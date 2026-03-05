@@ -47,6 +47,13 @@ export function linkResolver(link: Link | DereferencedLink | undefined) {
       if (link?.post && typeof link.post === 'string') {
         return `/posts/${link.post}`
       }
+    case 'anchor': {
+      const anchor = (link as DereferencedLink).anchor
+      if (anchor) {
+        return `#${anchor}`
+      }
+      return null
+    }
     case 'demo':
       return null
     default:

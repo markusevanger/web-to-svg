@@ -24,6 +24,7 @@ export const link = defineType({
           {title: 'URL', value: 'href'},
           {title: 'Page', value: 'page'},
           {title: 'Post', value: 'post'},
+          {title: 'Anchor (Scroll to section)', value: 'anchor'},
           {title: 'Demo (Activates Picker)', value: 'demo'},
         ],
         layout: 'radio',
@@ -77,11 +78,26 @@ export const link = defineType({
         }),
     }),
     defineField({
+      name: 'anchor',
+      title: 'Anchor ID',
+      type: 'string',
+      description: 'The anchor ID of a page builder section to scroll to (e.g. "how-it-works")',
+      hidden: ({parent}) => parent?.linkType !== 'anchor',
+      validation: (Rule) =>
+        Rule.custom((value, context) => {
+          const parent = context.parent as Link
+          if (parent?.linkType === 'anchor' && !value) {
+            return 'Anchor ID is required when Link Type is Anchor'
+          }
+          return true
+        }),
+    }),
+    defineField({
       name: 'openInNewTab',
       title: 'Open in new tab',
       type: 'boolean',
       initialValue: false,
-      hidden: ({parent}) => parent?.linkType === 'demo',
+      hidden: ({parent}) => parent?.linkType === 'demo' || parent?.linkType === 'anchor',
     }),
   ],
 })

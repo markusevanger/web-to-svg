@@ -10,17 +10,23 @@ interface ResolvedLinkProps {
 }
 
 export default function ResolvedLink({link, children, className}: ResolvedLinkProps) {
-  // resolveLink() is used to determine the type of link and return the appropriate URL.
   const resolvedLink = linkResolver(link)
 
   if (typeof resolvedLink === 'string') {
+    if (link?.linkType === 'anchor' || link?.linkType === 'href') {
+      return (
+        <a
+          href={resolvedLink}
+          className={className}
+          target={link?.openInNewTab ? '_blank' : undefined}
+          rel={link?.openInNewTab ? 'noopener noreferrer' : undefined}
+        >
+          {children}
+        </a>
+      )
+    }
     return (
-      <Link
-        href={resolvedLink}
-        target={link?.openInNewTab ? '_blank' : undefined}
-        rel={link?.openInNewTab ? 'noopener noreferrer' : undefined}
-        className={className}
-      >
+      <Link href={resolvedLink} className={className}>
         {children}
       </Link>
     )

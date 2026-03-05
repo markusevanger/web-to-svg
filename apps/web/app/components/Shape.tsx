@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useCallback } from "react"
 import { motion, type TargetAndTransition, type Transition } from "motion/react"
 
 type ShapeType = 'circle' | 'triangle' | 'square' | 'star'
@@ -29,18 +30,29 @@ const shapes: Record<ShapeType, React.ReactNode> = {
 }
 
 export default function Shape({shape, color, size = '0.6em', rotate = 0, animate}: ShapeProps) {
+  const [spins, setSpins] = useState(0)
+  const handleClick = useCallback(() => setSpins((s) => s + 1), [])
+
   return (
-    <motion.svg
-      viewBox="0 0 60 60"
-      className="inline-block shrink-0 self-center"
-      style={{width: size, height: size, rotate: rotate ? `${rotate}deg` : undefined}}
-      fill={colors[color]}
-      aria-hidden="true"
+    <motion.span
+      className="inline-block shrink-0 self-center cursor-pointer"
+      style={{width: size, height: size}}
       initial={animate?.initial}
       animate={animate?.animate}
       transition={animate?.transition}
+      onClick={handleClick}
+      whileHover={{scale: 1.15}}
     >
-      {shapes[shape]}
-    </motion.svg>
+      <motion.svg
+        viewBox="0 0 60 60"
+        className="w-full h-full"
+        fill={colors[color]}
+        aria-hidden="true"
+        animate={{rotate: (rotate || 0) + spins * 180}}
+        transition={{type: 'spring', stiffness: 80, damping: 20}}
+      >
+        {shapes[shape]}
+      </motion.svg>
+    </motion.span>
   )
 }

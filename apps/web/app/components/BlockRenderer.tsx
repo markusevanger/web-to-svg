@@ -5,6 +5,7 @@ import Info from '@/app/components/InfoSection'
 import SplitSection from '@/app/components/SplitSection'
 import Steps from '@/app/components/Steps'
 import BlocksComponent from '@/app/components/Blocks'
+import MediaSection from '@/app/components/MediaSection'
 import {dataAttr} from '@/sanity/lib/utils'
 import {PageBuilderSection} from '@/sanity/lib/types'
 
@@ -25,6 +26,7 @@ const Blocks = {
   splitSection: SplitSection,
   steps: Steps,
   blocks: BlocksComponent,
+  mediaSection: MediaSection,
 } as BlocksType
 
 /**
@@ -33,9 +35,11 @@ const Blocks = {
 export default function BlockRenderer({block, index, pageId, pageType}: BlockProps) {
   // Block does exist
   if (typeof Blocks[block._type] !== 'undefined') {
+    const anchor = 'anchor' in block ? (block as {anchor?: string}).anchor : undefined
     return (
       <div
         key={block._key}
+        id={anchor || undefined}
         data-sanity={dataAttr({
           id: pageId,
           type: pageType,

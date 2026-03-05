@@ -29,4 +29,14 @@ export const buttonGroup = defineType({
       initialValue: 'center',
     }),
   ],
+  preview: {
+    select: {buttons: 'buttons'},
+    prepare({buttons}) {
+      const count = buttons?.length || 0
+      return {
+        title: 'Button Group',
+        subtitle: `${count} button${count === 1 ? '' : 's'}`,
+      }
+    },
+  },
 })

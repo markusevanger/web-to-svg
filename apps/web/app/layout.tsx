@@ -71,7 +71,7 @@ export default async function RootLayout({children}: {children: React.ReactNode}
   const {isEnabled: isDraftMode} = await draftMode()
 
   return (
-    <html lang="en" className={`${splineSansMono.variable} ${tiro.variable} bg-white text-black`}>
+    <html lang="en" className={`${splineSansMono.variable} ${tiro.variable} bg-white text-black scroll-smooth`}>
       <body className="bg-dots">
         <div className="min-h-screen pt-24">
           {/* The <Toaster> component is responsible for rendering toast notifications used in /app/client-utils.ts and /app/components/DraftModeToast.tsx */}

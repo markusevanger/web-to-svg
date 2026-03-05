@@ -31,6 +31,7 @@ export class Picker {
     this._mouseMoveQueued = false;
     this._lastMouseX = 0;
     this._lastMouseY = 0;
+    this._converting = false;
 
     // DOM elements (created in activate)
     this._styleEl = null;
@@ -247,9 +248,10 @@ export class Picker {
   }
 
   _blobToDataUrl(blob) {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error || new Error('FileReader failed'));
       reader.readAsDataURL(blob);
     });
   }
@@ -389,7 +391,7 @@ export class Picker {
       item.textContent = text;
       item.addEventListener('click', async () => {
         dropdown.classList.remove('ets-dropdown-open');
-        await handler();
+        try { await handler(); } catch (err) { this._showToast('Error: ' + err.message); }
       });
       dropdown.appendChild(item);
     }
@@ -989,6 +991,7 @@ export class Picker {
   }
 
   async _onClickFn(e) {
+    if (this._converting) return;
     if (!this._currentTarget || (this._isOwnElement(e.target) && e.target !== this._shield)) return;
 
     e.preventDefault();
@@ -1023,6 +1026,7 @@ export class Picker {
     this._loaderLabel.textContent = 'Converting\u2026';
     this._loaderBar.classList.add('ets-loader-bar-pulse');
 
+    this._converting = true;
     try {
       const svgString = await convertElementToSVG(element, this.adapter);
       this._loaderBar.classList.remove('ets-loader-bar-pulse');
@@ -1036,6 +1040,8 @@ export class Picker {
       console.error('[Web to SVG] Conversion failed:', err);
       this._showToast('SVG conversion failed: ' + err.message);
       this.deactivate();
+    } finally {
+      this._converting = false;
     }
   }
 
@@ -1043,6 +1049,11 @@ export class Picker {
     if (e.key === 'Escape') {
       e.preventDefault();
       e.stopPropagation();
+      const openDropdowns = this._preview?.querySelectorAll('.ets-dropdown-open');
+      if (openDropdowns?.length) {
+        openDropdowns.forEach(d => d.classList.remove('ets-dropdown-open'));
+        return;
+      }
       this.deactivate();
     }
     if (e.key === 'c' && (e.metaKey || e.ctrlKey) && !e.shiftKey && this._pinned && this._pinnedCopySvg) {

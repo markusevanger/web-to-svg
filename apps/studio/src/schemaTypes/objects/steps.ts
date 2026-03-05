@@ -1,17 +1,24 @@
 import {defineField, defineType, defineArrayMember} from 'sanity'
-import {BlockElementIcon, ComposeSparklesIcon, ImageIcon, ControlsIcon, HighlightIcon} from '@sanity/icons'
+import {OlistIcon, ComposeSparklesIcon, ImageIcon, ControlsIcon, HighlightIcon} from '@sanity/icons'
 
 export const steps = defineType({
   name: 'steps',
   title: 'Steps',
   type: 'object',
-  icon: BlockElementIcon,
+  icon: OlistIcon,
   groups: [
     {name: 'content', icon: ComposeSparklesIcon, default: true},
     {name: 'media', icon: ImageIcon},
     {name: 'design', icon: ControlsIcon},
   ],
   fields: [
+    defineField({
+      name: 'anchor',
+      title: 'Anchor ID',
+      type: 'string',
+      description: 'Used for in-page linking (e.g. "how-it-works" becomes #how-it-works)',
+      group: 'design',
+    }),
     defineField({
       name: 'heading',
       title: 'Heading',
@@ -111,11 +118,12 @@ export const steps = defineType({
     }),
   ],
   preview: {
-    select: {title: 'heading'},
-    prepare({title}) {
+    select: {title: 'heading', steps: 'steps'},
+    prepare({title, steps}) {
+      const count = steps?.length || 0
       return {
         title: title || 'Steps',
-        subtitle: 'Steps Section',
+        subtitle: `Steps — ${count} step${count === 1 ? '' : 's'}`,
       }
     },
   },

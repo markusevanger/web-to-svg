@@ -136,7 +136,7 @@ async function loadFont(url, fetchFn) {
   }
   if (!buffer) {
     // Fallback: direct fetch (works for same-origin fonts)
-    const resp = await fetch(url);
+    const resp = await fetch(url, { signal: AbortSignal.timeout(30_000) });
     if (!resp.ok) throw new Error(`Font fetch failed: ${resp.status}`);
     buffer = await resp.arrayBuffer();
   }
@@ -268,6 +268,7 @@ function getFontProps(textEl) {
  * but opentype.js getPath() expects y = baseline.
  */
 function adjustYForBaseline(y, fontSize, dominantBaseline, font) {
+  if (!font.unitsPerEm) return y;
   if (dominantBaseline === 'text-after-edge') {
     // y is the after-edge (bottom). Baseline is above by the descent amount.
     return y + (font.descender / font.unitsPerEm) * fontSize;
@@ -386,7 +387,12 @@ function rasterizeTextElement(textEl, doc) {
     ctx.textBaseline = 'alphabetic';
     ctx.fillText(seg.text, pad, ascent + pad);
 
-    const dataUrl = canvas.toDataURL('image/png');
+    let dataUrl;
+    try {
+      dataUrl = canvas.toDataURL('image/png');
+    } catch {
+      return null;
+    }
     const image = doc.createElementNS(NS, 'image');
     image.setAttribute('href', dataUrl);
     // Adjust y based on dominant-baseline before positioning
@@ -458,7 +464,7 @@ export async function outlineTextInSVGDoc(svgDoc, adapter) {
           g.appendChild(pathEl);
         }
 
-        if (g.childNodes.length > 0) {
+        if (g.childNodes.length > 0 && textEl.parentNode) {
           textEl.parentNode.replaceChild(g, textEl);
           vectorOutlined++;
           vectorSuccess = true;
@@ -471,7 +477,7 @@ export async function outlineTextInSVGDoc(svgDoc, adapter) {
     // Fallback: rasterize via canvas (browser renders with the correct font)
     if (!vectorSuccess) {
       const replacement = rasterizeTextElement(textEl, svgDoc);
-      if (replacement) {
+      if (replacement && textEl.parentNode) {
         textEl.parentNode.replaceChild(replacement, textEl);
         rasterOutlined++;
       }

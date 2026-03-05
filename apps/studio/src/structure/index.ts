@@ -1,16 +1,19 @@
-import {CogIcon} from '@sanity/icons'
-import type {StructureBuilder, StructureResolver} from 'sanity/structure'
-import pluralize from 'pluralize-esm'
+import {CogIcon, DocumentIcon, DocumentTextIcon, EnvelopeIcon, UserIcon} from '@sanity/icons'
+import type {StructureResolver} from 'sanity/structure'
 
-const DISABLED_TYPES = ['settings', 'assist.instruction.context']
-
-export const structure: StructureResolver = (S: StructureBuilder) =>
+export const structure: StructureResolver = (S) =>
   S.list()
     .title('Content')
     .items([
-      ...S.documentTypeListItems()
-        .filter((listItem: any) => !DISABLED_TYPES.includes(listItem.getId()))
-        .map((listItem) => listItem.title(pluralize(listItem.getTitle() as string))),
+      // Pages
+      S.documentTypeListItem('page').title('Pages').icon(DocumentIcon),
+      S.documentTypeListItem('post').title('Posts').icon(DocumentTextIcon),
+      S.divider(),
+      // People & Feedback
+      S.documentTypeListItem('person').title('People').icon(UserIcon),
+      S.documentTypeListItem('feedback').title('Feedback').icon(EnvelopeIcon),
+      S.divider(),
+      // Settings
       S.listItem()
         .title('Site Settings')
         .child(S.document().schemaType('settings').documentId('siteSettings'))

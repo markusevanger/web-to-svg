@@ -2,6 +2,7 @@ import {type PortableTextBlock} from 'next-sanity'
 
 import PortableText from '@/app/components/PortableText'
 import Image from '@/app/components/SanityImage'
+import ShapeGrid from '@/app/components/ShapeGrid'
 import {stegaClean} from '@sanity/client/stega'
 import {ExtractPageBuilderType} from '@/sanity/lib/types'
 
@@ -12,8 +13,9 @@ type SplitSectionProps = {
   pageType: string
 }
 
-export default function SplitSection({block}: SplitSectionProps) {
+export default function SplitSection({block, index}: SplitSectionProps) {
   const {heading, subheading, content, mediaType, image, video, videoUrl, contentAlignment} = block
+  const cleanMediaType = stegaClean(mediaType)
   const isMediaFirst = stegaClean(contentAlignment) === 'imageFirst'
 
   return (
@@ -38,7 +40,12 @@ export default function SplitSection({block}: SplitSectionProps) {
         <div
           className={`${isMediaFirst ? 'lg:order-1' : ''} overflow-hidden`}
         >
-          {stegaClean(mediaType) === 'video' ? (
+          {cleanMediaType === 'shapes' ? (
+            <ShapeGrid
+              count={(block as {shapeCount?: number}).shapeCount || 6}
+              seed={index * 137 + 42}
+            />
+          ) : cleanMediaType === 'video' ? (
             videoUrl ? (
               <iframe
                 src={videoUrl}

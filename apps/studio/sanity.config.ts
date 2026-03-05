@@ -15,7 +15,8 @@ import {StudioIcon} from './src/components/StudioIcon'
 
 const projectId = process.env.SANITY_STUDIO_PROJECT_ID || 'wdqtle79'
 const dataset = process.env.SANITY_STUDIO_DATASET || 'production'
-const SANITY_STUDIO_PREVIEW_URL = process.env.SANITY_STUDIO_PREVIEW_URL || 'http://localhost:3000'
+const previewUrlEnv = process.env.SANITY_STUDIO_PREVIEW_URL || 'http://localhost:3000'
+const SANITY_STUDIO_PREVIEW_URL = previewUrlEnv.startsWith('http') ? previewUrlEnv : `https://${previewUrlEnv}`
 
 const homeLocation = {
   title: 'Home',
@@ -42,6 +43,7 @@ export default defineConfig({
   dataset,
 
   plugins: [
+    structureTool({structure}),
     presentationTool({
       previewUrl: {
         origin: SANITY_STUDIO_PREVIEW_URL,
@@ -102,7 +104,6 @@ export default defineConfig({
         },
       },
     }),
-    structureTool({structure}),
     unsplashImageAsset(),
     assist(),
     visionTool(),

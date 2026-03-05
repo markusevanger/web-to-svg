@@ -1,13 +1,20 @@
 import {defineField, defineType, defineArrayMember} from 'sanity'
-import {InlineElementIcon, ComposeSparklesIcon} from '@sanity/icons'
+import {ThLargeIcon, ComposeSparklesIcon} from '@sanity/icons'
 
 export const blocks = defineType({
   name: 'blocks',
   title: 'Blocks',
   type: 'object',
-  icon: InlineElementIcon,
+  icon: ThLargeIcon,
   groups: [{name: 'content', icon: ComposeSparklesIcon, default: true}],
   fields: [
+    defineField({
+      name: 'anchor',
+      title: 'Anchor ID',
+      type: 'string',
+      description: 'Used for in-page linking (e.g. "features" becomes #features)',
+      group: 'content',
+    }),
     defineField({
       name: 'heading',
       title: 'Heading',
@@ -93,11 +100,12 @@ export const blocks = defineType({
     }),
   ],
   preview: {
-    select: {title: 'heading'},
-    prepare({title}) {
+    select: {title: 'heading', items: 'items'},
+    prepare({title, items}) {
+      const count = items?.length || 0
       return {
         title: title || 'Blocks',
-        subtitle: 'Blocks Section',
+        subtitle: `Blocks — ${count} item${count === 1 ? '' : 's'}`,
       }
     },
   },

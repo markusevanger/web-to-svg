@@ -8,6 +8,7 @@ import {splitSection} from './objects/splitSection'
 import {steps} from './objects/steps'
 import {blocks} from './objects/blocks'
 import {buttonGroup} from './objects/buttonGroup'
+import {mediaSection} from './objects/mediaSection'
 import {accordionGroup} from './objects/accordionGroup'
 import {settings} from './singletons/settings'
 import {link} from './objects/link'
@@ -35,6 +36,7 @@ export const schemaTypes = [
   steps,
   blocks,
   buttonGroup,
+  mediaSection,
   accordionGroup,
   link,
 ]
