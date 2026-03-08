@@ -1,7 +1,5 @@
 import {feedback} from './documents/feedback'
-import {person} from './documents/person'
 import {page} from './documents/page'
-import {post} from './documents/post'
 import {callToAction} from './objects/callToAction'
 import {infoSection} from './objects/infoSection'
 import {splitSection} from './objects/splitSection'
@@ -10,6 +8,7 @@ import {blocks} from './objects/blocks'
 import {buttonGroup} from './objects/buttonGroup'
 import {mediaSection} from './objects/mediaSection'
 import {accordionGroup} from './objects/accordionGroup'
+import {feedbackPage} from './singletons/feedbackPage'
 import {settings} from './singletons/settings'
 import {link} from './objects/link'
 import {blockContent} from './objects/blockContent'
@@ -21,10 +20,9 @@ import {blockContentTextOnly} from './objects/blockContentTextOnly'
 export const schemaTypes = [
   // Singletons
   settings,
+  feedbackPage,
   // Documents
   page,
-  post,
-  person,
   feedback,
   // Objects
   button,

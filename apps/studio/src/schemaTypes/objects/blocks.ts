@@ -106,6 +106,7 @@ export const blocks = defineType({
       return {
         title: title || 'Blocks',
         subtitle: `Blocks — ${count} item${count === 1 ? '' : 's'}`,
+        media: ThLargeIcon,
       }
     },
   },

@@ -1,6 +1,9 @@
 {
   "name": "@web-to-svg/web",
   "private": true,
+  "description": "Next.js website for webtosvg.com",
+  "author": "markusevanger",
+  "license": "MIT",
   "scripts": {
     "prebuild": "sanity typegen generate",
     "build": "next build",

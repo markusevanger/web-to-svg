@@ -1,5 +1,5 @@
 /**
- * This component uses Portable Text to render a post body.
+ * This component uses Portable Text to render block content.
  *
  * You can learn more about Portable Text on:
  * https://www.sanity.io/docs/block-content

@@ -10,26 +10,16 @@ export default async function Header() {
     query: settingsQuery,
   })
 
-  const buttons = [
-    {
-      _key: 'feedback',
-      buttonText: 'Feedback',
-      link: {_type: 'link' as const, linkType: 'page' as const, page: 'feedback'},
-      variant: 'secondary' as const,
-    },
-    ...(settings?.headerButton?.buttonText && settings?.headerButton?.link
-      ? [
-          {
-            _key: 'header-cta',
-            buttonText: settings.headerButton.buttonText,
-            link: settings.headerButton.link as DereferencedLink,
-            variant: (settings.headerButton.variant || 'primary') as 'primary' | 'secondary',
-            icon: settings.headerButton.icon || undefined,
-            iconPosition: (settings.headerButton.iconPosition || 'right') as 'left' | 'right',
-          },
-        ]
-      : []),
-  ]
+  const buttons = (settings?.headerButtons ?? [])
+    .filter((b): b is NonNullable<typeof b> => Boolean(b?.buttonText && b?.link))
+    .map((b) => ({
+      _key: b._key,
+      buttonText: b.buttonText!,
+      link: b.link as DereferencedLink,
+      variant: (b.variant || 'primary') as 'primary' | 'secondary',
+      icon: b.icon || undefined,
+      iconPosition: (b.iconPosition || 'right') as 'left' | 'right',
+    }))
 
   return (
     <header className="fixed z-50 h-24 inset-0 flex items-center">

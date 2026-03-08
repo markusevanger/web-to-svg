@@ -3,7 +3,7 @@ import type {Metadata} from 'next'
 import Hero from '@/app/components/Hero'
 import PageBuilderPage from '@/app/components/PageBuilder'
 import {sanityFetch} from '@/sanity/lib/live'
-import {getPageQuery} from '@/sanity/lib/queries'
+import {frontpageQuery, getPageQuery} from '@/sanity/lib/queries'
 import {GetPageQueryResult} from '@/sanity.types'
 
 export const metadata: Metadata = {
@@ -12,10 +12,11 @@ export const metadata: Metadata = {
 }
 
 export default async function Page() {
-  const {data: page} = await sanityFetch({
-    query: getPageQuery,
-    params: {slug: 'home'},
-  })
+  const {data: frontpageSlug} = await sanityFetch({query: frontpageQuery})
+
+  const {data: page} = frontpageSlug
+    ? await sanityFetch({query: getPageQuery, params: {slug: frontpageSlug}})
+    : {data: null}
 
   return (
     <>

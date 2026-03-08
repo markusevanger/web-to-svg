@@ -48,6 +48,7 @@ export const accordionGroup = defineType({
       return {
         title: 'Accordion Group',
         subtitle: `${count} item${count === 1 ? '' : 's'}`,
+        media: ChevronDownIcon,
       }
     },
   },

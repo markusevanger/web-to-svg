@@ -1,6 +1,13 @@
 {
   "name": "web-to-svg",
   "private": true,
+  "description": "Click any element on a webpage and export it as a clean SVG or PNG",
+  "author": "markusevanger",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/markusevanger/to-svg.git"
+  },
   "packageManager": "pnpm@10.28.0",
   "scripts": {
     "dev": "turbo dev",
@@ -10,6 +17,6 @@
     "dev:studio": "pnpm --filter @web-to-svg/studio dev"
   },
   "devDependencies": {
-    "turbo": "^2"
+    "turbo": "^2.8.14"
   }
 }

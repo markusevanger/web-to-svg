@@ -124,6 +124,7 @@ export const steps = defineType({
       return {
         title: title || 'Steps',
         subtitle: `Steps — ${count} step${count === 1 ? '' : 's'}`,
+        media: OlistIcon,
       }
     },
   },

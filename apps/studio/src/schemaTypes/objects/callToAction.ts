@@ -117,7 +117,7 @@ export const callToAction = defineType({
       return {
         title: title,
         subtitle: 'Call to Action',
-        media: image || undefined,
+        media: image || BulbOutlineIcon,
       }
     },
   },

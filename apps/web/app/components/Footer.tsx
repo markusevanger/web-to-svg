@@ -1,8 +1,27 @@
-import Image from "next/image";
-import Link from "next/link";
-import ButtonGroup from "@/app/components/ButtonGroup";
+import Image from 'next/image'
+import Link from 'next/link'
+import {PortableText, type PortableTextBlock} from 'next-sanity'
+import ButtonGroup from '@/app/components/ButtonGroup'
+import {settingsQuery} from '@/sanity/lib/queries'
+import {sanityFetch} from '@/sanity/lib/live'
+import {DereferencedLink} from '@/sanity/lib/types'
 
-export default function Footer() {
+export default async function Footer() {
+  const {data: settings} = await sanityFetch({
+    query: settingsQuery,
+  })
+
+  const buttons = (settings?.footerButtons ?? [])
+    .filter((b): b is NonNullable<typeof b> => Boolean(b?.buttonText && b?.link))
+    .map((b) => ({
+      _key: b._key,
+      buttonText: b.buttonText!,
+      link: b.link as DereferencedLink,
+      variant: (b.variant || 'primary') as 'primary' | 'secondary',
+      icon: b.icon || undefined,
+      iconPosition: (b.iconPosition || 'right') as 'left' | 'right',
+    }))
+
   return (
     <footer className="mt-24 px-6 lg:px-28 pb-8">
       <div className="bg-white rounded-xl border border-gray-200 px-6 lg:px-12 py-12">
@@ -17,36 +36,20 @@ export default function Footer() {
                 className="h-7 w-auto"
               />
             </Link>
-            <p className="text-sm text-gray-500 max-w-xs">
-              Click any element on a webpage and export it as a clean SVG or
-              PNG.
-            </p>
+            {settings?.footerDescription && (
+              <div className="text-sm text-gray-500 max-w-xs [&_p]:m-0">
+                <PortableText value={settings.footerDescription as PortableTextBlock[]} />
+              </div>
+            )}
           </div>
 
-          <ButtonGroup
-            alignment="right"
-            buttons={[
-              {
-                _key: "add-to-browser",
-                buttonText: "Add to Browser",
-                variant: "primary",
-                icon: "Chrome",
-                iconPosition: "left",
-                link: {
-                  _type: "link",
-                  linkType: "href",
-                  href: "https://chromewebstore.google.com",
-                  openInNewTab: true,
-                },
-              },
-            ]}
-          />
+          <ButtonGroup buttons={buttons} alignment="right" />
         </div>
 
         <div className="mt-12 pt-6 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-400">
-          <span>&copy; {new Date().getFullYear()} Web to SVG</span>
+          <span>&copy; {new Date().getFullYear()} Web to SVG · <Link href="/privacy" className="hover:text-gray-600 transition-colors">Privacy Policy</Link></span>
           <span>
-            Extension by{" "}
+            Extension by{' '}
             <a
               href="https://markusevanger.no"
               target="_blank"
@@ -61,5 +64,5 @@ export default function Footer() {
         </div>
       </div>
     </footer>
-  );
+  )
 }

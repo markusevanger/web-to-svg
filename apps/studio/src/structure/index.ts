@@ -1,4 +1,4 @@
-import {CogIcon, DocumentIcon, DocumentTextIcon, EnvelopeIcon, UserIcon} from '@sanity/icons'
+import {CogIcon, DocumentIcon, EnvelopeIcon} from '@sanity/icons'
 import type {StructureResolver} from 'sanity/structure'
 
 export const structure: StructureResolver = (S) =>
@@ -7,11 +7,22 @@ export const structure: StructureResolver = (S) =>
     .items([
       // Pages
       S.documentTypeListItem('page').title('Pages').icon(DocumentIcon),
-      S.documentTypeListItem('post').title('Posts').icon(DocumentTextIcon),
       S.divider(),
-      // People & Feedback
-      S.documentTypeListItem('person').title('People').icon(UserIcon),
-      S.documentTypeListItem('feedback').title('Feedback').icon(EnvelopeIcon),
+      // Feedback
+      S.listItem()
+        .title('Feedback')
+        .icon(EnvelopeIcon)
+        .child(
+          S.list()
+            .title('Feedback')
+            .items([
+              S.listItem()
+                .title('Page')
+                .icon(DocumentIcon)
+                .child(S.document().schemaType('feedbackPage').documentId('feedbackPage')),
+              S.documentTypeListItem('feedback').title('Responses').icon(EnvelopeIcon),
+            ]),
+        ),
       S.divider(),
       // Settings
       S.listItem()

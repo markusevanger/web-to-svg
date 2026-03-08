@@ -4,6 +4,7 @@ import {visionTool} from '@sanity/vision'
 import {schemaTypes} from './src/schemaTypes'
 import {structure} from './src/structure'
 import {unsplashImageAsset} from 'sanity-plugin-asset-source-unsplash'
+import {media, mediaAssetSource} from 'sanity-plugin-media'
 import {
   presentationTool,
   defineDocuments,
@@ -13,7 +14,7 @@ import {
 import {assist} from '@sanity/assist'
 import {StudioIcon} from './src/components/StudioIcon'
 
-const projectId = process.env.SANITY_STUDIO_PROJECT_ID || 'wdqtle79'
+const projectId = process.env.SANITY_STUDIO_PROJECT_ID!
 const dataset = process.env.SANITY_STUDIO_DATASET || 'production'
 const previewUrlEnv = process.env.SANITY_STUDIO_PREVIEW_URL || 'http://localhost:3000'
 const SANITY_STUDIO_PREVIEW_URL = previewUrlEnv.startsWith('http') ? previewUrlEnv : `https://${previewUrlEnv}`
@@ -25,8 +26,6 @@ const homeLocation = {
 
 function resolveHref(documentType?: string, slug?: string): string | undefined {
   switch (documentType) {
-    case 'post':
-      return slug ? `/posts/${slug}` : undefined
     case 'page':
       return slug ? `/${slug}` : undefined
     default:
@@ -55,15 +54,11 @@ export default defineConfig({
         mainDocuments: defineDocuments([
           {
             route: '/',
-            filter: `_type == "page" && slug.current == "home"`,
+            filter: `_id == *[_type == "settings"][0].frontpage._ref`,
           },
           {
             route: '/:slug',
             filter: `_type == "page" && slug.current == $slug || _id == $slug`,
-          },
-          {
-            route: '/posts/:slug',
-            filter: `_type == "post" && slug.current == $slug || _id == $slug`,
           },
         ]),
         locations: {
@@ -86,24 +81,10 @@ export default defineConfig({
               ],
             }),
           }),
-          post: defineLocations({
-            select: {
-              title: 'title',
-              slug: 'slug.current',
-            },
-            resolve: (doc) => ({
-              locations: [
-                {
-                  title: doc?.title || 'Untitled',
-                  href: resolveHref('post', doc?.slug)!,
-                },
-                homeLocation,
-              ].filter(Boolean) as DocumentLocation[],
-            }),
-          }),
         },
       },
     }),
+    media(),
     unsplashImageAsset(),
     assist(),
     visionTool(),

@@ -38,6 +38,7 @@ export const infoSection = defineType({
       return {
         title: title || 'Untitled Info Section',
         subtitle: 'Info Section',
+        media: TextIcon,
       }
     },
   },

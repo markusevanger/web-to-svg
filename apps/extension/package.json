@@ -1,7 +1,7 @@
 {
   "name": "@web-to-svg/extension",
   "version": "1.0.0",
-  "description": "",
+  "description": "Chrome Extension to click any webpage element and export it as SVG or PNG",
   "main": "index.js",
   "scripts": {
     "icons": "node scripts/generate-icons.mjs",
@@ -9,8 +9,8 @@
     "dev": "pnpm icons && pnpm build"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "markusevanger",
+  "license": "MIT",
   "type": "commonjs",
   "dependencies": {
     "@web-to-svg/engine": "workspace:*"

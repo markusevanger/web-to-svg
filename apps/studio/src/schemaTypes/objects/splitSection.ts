@@ -134,7 +134,7 @@ export const splitSection = defineType({
       return {
         title: title || 'Untitled Split Section',
         subtitle: subtitle || `Split Section — ${mediaLabel}`,
-        media: image || undefined,
+        media: image || SplitVerticalIcon,
       }
     },
   },

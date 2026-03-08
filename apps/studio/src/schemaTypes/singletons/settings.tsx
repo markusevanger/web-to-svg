@@ -1,8 +1,6 @@
 import {CogIcon} from '@sanity/icons'
 import {defineArrayMember, defineField, defineType} from 'sanity'
-import type {Link, Settings} from '../../../sanity.types'
-
-import * as demo from '../../lib/initialValues'
+import type {Settings} from '../../../sanity.types'
 
 /**
  * Settings schema Singleton.  Singletons are single documents that are displayed not in a collection, handy for things like site settings and other global configurations.
@@ -16,17 +14,27 @@ export const settings = defineType({
   icon: CogIcon,
   groups: [
     {name: 'general', title: 'General', default: true},
+    {name: 'header', title: 'Header'},
+    {name: 'footer', title: 'Footer'},
     {name: 'demo', title: 'Demo'},
     {name: 'seo', title: 'SEO'},
   ],
   fields: [
     defineField({
+      name: 'frontpage',
+      title: 'Frontpage',
+      description: 'The page displayed at the root URL (/)',
+      type: 'reference',
+      to: [{type: 'page'}],
+      group: 'general',
+    }),
+    defineField({
       name: 'title',
-      description: 'This field is the title of your blog.',
+      description: 'The site title.',
       title: 'Title',
       type: 'string',
       group: 'general',
-      initialValue: demo.title,
+      initialValue: 'Web to SVG',
       validation: (rule) => rule.required(),
     }),
     defineField({
@@ -35,7 +43,6 @@ export const settings = defineType({
       title: 'Description',
       type: 'array',
       group: 'general',
-      initialValue: demo.description,
       of: [
         // Define a minified block content field for the description. https://www.sanity.io/docs/block-content
         defineArrayMember({
@@ -60,7 +67,6 @@ export const settings = defineType({
                       list: [
                         {title: 'URL', value: 'href'},
                         {title: 'Page', value: 'page'},
-                        {title: 'Post', value: 'post'},
                       ],
                       layout: 'radio',
                     },
@@ -95,21 +101,6 @@ export const settings = defineType({
                       }),
                   }),
                   defineField({
-                    name: 'post',
-                    title: 'Post',
-                    type: 'reference',
-                    to: [{type: 'post'}],
-                    hidden: ({parent}) => parent?.linkType !== 'post',
-                    validation: (Rule) =>
-                      Rule.custom((value, context) => {
-                        const parent = context.parent as Link
-                        if (parent?.linkType === 'post' && !value) {
-                          return 'Post reference is required when Link Type is Post'
-                        }
-                        return true
-                      }),
-                  }),
-                  defineField({
                     name: 'openInNewTab',
                     title: 'Open in new tab',
                     type: 'boolean',
@@ -123,12 +114,38 @@ export const settings = defineType({
       ],
     }),
     defineField({
-      name: 'headerButton',
-      title: 'Header Button',
-      description: 'CTA button displayed in the site header (e.g. "Add to Chrome")',
-      type: 'button',
-      group: 'general',
-      options: {collapsible: true, collapsed: true},
+      name: 'headerButtons',
+      title: 'Buttons',
+      description: 'Buttons displayed in the site header',
+      type: 'array',
+      of: [defineArrayMember({type: 'button'})],
+      group: 'header',
+    }),
+    defineField({
+      name: 'footerDescription',
+      title: 'Description',
+      description: 'Short text displayed in the site footer',
+      type: 'array',
+      group: 'footer',
+      of: [
+        defineArrayMember({
+          type: 'block',
+          styles: [],
+          lists: [],
+          marks: {
+            decorators: [],
+            annotations: [],
+          },
+        }),
+      ],
+    }),
+    defineField({
+      name: 'footerButtons',
+      title: 'Buttons',
+      description: 'Buttons displayed in the site footer',
+      type: 'array',
+      of: [defineArrayMember({type: 'button'})],
+      group: 'footer',
     }),
     defineField({
       name: 'demoFallbackButton',

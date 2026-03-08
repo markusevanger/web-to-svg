@@ -1,6 +1,9 @@
 {
   "name": "@web-to-svg/engine",
   "version": "1.0.0",
+  "description": "Core SVG conversion engine for Web to SVG",
+  "author": "markusevanger",
+  "license": "MIT",
   "type": "module",
   "main": "src/index.js",
   "exports": {

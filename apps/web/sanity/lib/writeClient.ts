@@ -4,10 +4,10 @@ import {createClient} from 'next-sanity'
 
 import {apiVersion, dataset, projectId} from '@/sanity/lib/api'
 
-const writeToken = process.env.SANITY_API_WRITE_TOKEN
+const token = process.env.SANITY_API_TOKEN
 
-if (!writeToken) {
-  console.warn('Missing SANITY_API_WRITE_TOKEN — feedback submissions will fail')
+if (!token) {
+  console.warn('Missing SANITY_API_TOKEN — feedback submissions will fail')
 }
 
 export const writeClient = createClient({
@@ -15,5 +15,5 @@ export const writeClient = createClient({
   dataset,
   apiVersion,
   useCdn: false,
-  token: writeToken,
+  token,
 })
