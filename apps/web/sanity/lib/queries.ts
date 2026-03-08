@@ -2,7 +2,10 @@ import {defineQuery} from 'next-sanity'
 
 const linkReference = /* groq */ `
   _type == "link" => {
-    "page": page->slug.current,
+    "page": select(
+      page->_type == "feedbackPage" => "feedback",
+      page->slug.current
+    ),
   }
 `
 
@@ -11,6 +14,26 @@ const linkFields = /* groq */ `
       ...,
       ${linkReference}
       }
+`
+
+const blockContentWithLinks = /* groq */ `
+  ...,
+  markDefs[]{
+    ...,
+    ${linkReference}
+  }
+`
+
+const accordionGroupLinks = /* groq */ `
+  _type == "accordionGroup" => {
+    ...,
+    items[]{
+      ...,
+      content[]{
+        ${blockContentWithLinks}
+      }
+    }
+  }
 `
 
 export const settingsQuery = defineQuery(`*[_type == "settings"][0]{
@@ -48,21 +71,15 @@ export const getPageQuery = defineQuery(`
       },
       _type == "infoSection" => {
         content[]{
-          ...,
-          markDefs[]{
-            ...,
-            ${linkReference}
-          }
+          ${blockContentWithLinks},
+          ${accordionGroupLinks}
         }
       },
       _type == "splitSection" => {
         ...,
         content[]{
-          ...,
-          markDefs[]{
-            ...,
-            ${linkReference}
-          }
+          ${blockContentWithLinks},
+          ${accordionGroupLinks}
         },
         buttonGroup {
           ...,
@@ -77,11 +94,8 @@ export const getPageQuery = defineQuery(`
         steps[]{
           ...,
           text[]{
-            ...,
-            markDefs[]{
-              ...,
-              ${linkReference}
-            }
+            ${blockContentWithLinks},
+            ${accordionGroupLinks}
           }
         }
       },
