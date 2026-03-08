@@ -1467,10 +1467,51 @@
               "of": {
                 "type": "object",
                 "attributes": {
+                  "linkType": {
+                    "type": "objectAttribute",
+                    "value": {
+                      "type": "union",
+                      "of": [
+                        {
+                          "type": "string",
+                          "value": "href"
+                        },
+                        {
+                          "type": "string",
+                          "value": "page"
+                        }
+                      ]
+                    },
+                    "optional": true
+                  },
                   "href": {
                     "type": "objectAttribute",
                     "value": {
                       "type": "string"
+                    },
+                    "optional": true
+                  },
+                  "page": {
+                    "type": "objectAttribute",
+                    "value": {
+                      "type": "union",
+                      "of": [
+                        {
+                          "type": "inline",
+                          "name": "page.reference"
+                        },
+                        {
+                          "type": "inline",
+                          "name": "feedbackPage.reference"
+                        }
+                      ]
+                    },
+                    "optional": true
+                  },
+                  "openInNewTab": {
+                    "type": "objectAttribute",
+                    "value": {
+                      "type": "boolean"
                     },
                     "optional": true
                   },

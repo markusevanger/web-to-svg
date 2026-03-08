@@ -35,11 +35,18 @@ export type PageReference = {
   [internalGroqTypeReferenceTo]?: "page";
 };
 
+export type FeedbackPageReference = {
+  _ref: string;
+  _type: "reference";
+  _weak?: boolean;
+  [internalGroqTypeReferenceTo]?: "feedbackPage";
+};
+
 export type Link = {
   _type: "link";
   linkType?: "href" | "page" | "anchor" | "demo";
   href?: string;
-  page?: PageReference;
+  page?: PageReference | FeedbackPageReference;
   anchor?: string;
   openInNewTab?: boolean;
 };
@@ -215,7 +222,10 @@ export type BlockContentTextOnly = Array<{
   style?: "normal" | "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "blockquote";
   listItem?: "bullet" | "number";
   markDefs?: Array<{
+    linkType?: "href" | "page";
     href?: string;
+    page?: PageReference | FeedbackPageReference;
+    openInNewTab?: boolean;
     _type: "link";
     _key: string;
   }>;
@@ -238,7 +248,7 @@ export type BlockContent = Array<
         | {
             linkType?: "href" | "page";
             href?: string;
-            page?: PageReference;
+            page?: PageReference | FeedbackPageReference;
             openInNewTab?: boolean;
             _type: "link";
             _key: string;
@@ -350,6 +360,20 @@ export type Settings = {
       _key: string;
     } & Button
   >;
+  footerDescription?: Array<{
+    children?: Array<{
+      marks?: Array<string>;
+      text?: string;
+      _type: "span";
+      _key: string;
+    }>;
+    style?: "normal";
+    listItem?: never;
+    markDefs?: null;
+    level?: number;
+    _type: "block";
+    _key: string;
+  }>;
   footerButtons?: Array<
     {
       _key: string;
@@ -397,6 +421,18 @@ export type Page = {
         _key: string;
       } & MediaSection)
   >;
+};
+
+export type FeedbackPage = {
+  _id: string;
+  _type: "feedbackPage";
+  _createdAt: string;
+  _updatedAt: string;
+  _rev: string;
+  slug: Slug;
+  heading: string;
+  subheading?: string;
+  description?: BlockContentTextOnly;
 };
 
 export type Slug = {
@@ -652,6 +688,7 @@ export type AllSanitySchemaTypes =
   | SanityImageAssetReference
   | BlockItemImage
   | PageReference
+  | FeedbackPageReference
   | Link
   | AccordionGroup
   | SanityFileAssetReference
@@ -670,6 +707,7 @@ export type AllSanitySchemaTypes =
   | SanityImageHotspot
   | Settings
   | Page
+  | FeedbackPage
   | Slug
   | SanityAssistInstructionTask
   | SanityAssistTaskStatus

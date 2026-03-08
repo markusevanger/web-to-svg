@@ -222,7 +222,10 @@ export type BlockContentTextOnly = Array<{
   style?: "normal" | "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "blockquote";
   listItem?: "bullet" | "number";
   markDefs?: Array<{
+    linkType?: "href" | "page";
     href?: string;
+    page?: PageReference | FeedbackPageReference;
+    openInNewTab?: boolean;
     _type: "link";
     _key: string;
   }>;
@@ -733,7 +736,7 @@ export declare const internalGroqTypeReferenceTo: unique symbol;
 
 // Source: sanity/lib/queries.ts
 // Variable: settingsQuery
-// Query: *[_type == "settings"][0]{  ...,  headerButtons[]{    ...,      link {      ...,        _type == "link" => {    "page": page->slug.current,  }      }  },  footerButtons[]{    ...,      link {      ...,        _type == "link" => {    "page": page->slug.current,  }      }  },  demoFallbackButton {    ...,      link {      ...,        _type == "link" => {    "page": page->slug.current,  }      }  }}
+// Query: *[_type == "settings"][0]{  ...,  headerButtons[]{    ...,      link {      ...,        _type == "link" => {    "page": select(      page->_type == "feedbackPage" => "feedback",      page->slug.current    ),  }      }  },  footerButtons[]{    ...,      link {      ...,        _type == "link" => {    "page": select(      page->_type == "feedbackPage" => "feedback",      page->slug.current    ),  }      }  },  demoFallbackButton {    ...,      link {      ...,        _type == "link" => {    "page": select(      page->_type == "feedbackPage" => "feedback",      page->slug.current    ),  }      }  }}
 export type SettingsQueryResult = {
   _id: string;
   _type: "settings";
@@ -771,7 +774,7 @@ export type SettingsQueryResult = {
       _type: "link";
       linkType?: "anchor" | "demo" | "href" | "page";
       href?: string;
-      page: string | null;
+      page: string | "feedback" | null;
       anchor?: string;
       openInNewTab?: boolean;
     } | null;
@@ -801,7 +804,7 @@ export type SettingsQueryResult = {
       _type: "link";
       linkType?: "anchor" | "demo" | "href" | "page";
       href?: string;
-      page: string | null;
+      page: string | "feedback" | null;
       anchor?: string;
       openInNewTab?: boolean;
     } | null;
@@ -816,7 +819,7 @@ export type SettingsQueryResult = {
       _type: "link";
       linkType?: "anchor" | "demo" | "href" | "page";
       href?: string;
-      page: string | null;
+      page: string | "feedback" | null;
       anchor?: string;
       openInNewTab?: boolean;
     } | null;
@@ -837,7 +840,7 @@ export type SettingsQueryResult = {
 
 // Source: sanity/lib/queries.ts
 // Variable: getPageQuery
-// Query: *[_type == 'page' && slug.current == $slug][0]{    _id,    _type,    name,    slug,    heading,    subheading,    "pageBuilder": pageBuilder[]{      ...,      _type == "callToAction" => {        ...,        button {          ...,            link {      ...,        _type == "link" => {    "page": page->slug.current,  }      }        }      },      _type == "infoSection" => {        content[]{          ...,          markDefs[]{            ...,              _type == "link" => {    "page": page->slug.current,  }          }        }      },      _type == "splitSection" => {        ...,        content[]{          ...,          markDefs[]{            ...,              _type == "link" => {    "page": page->slug.current,  }          }        },        buttonGroup {          ...,          buttons[]{            ...,              link {      ...,        _type == "link" => {    "page": page->slug.current,  }      }          }        }      },      _type == "steps" => {        ...,        steps[]{          ...,          text[]{            ...,            markDefs[]{              ...,                _type == "link" => {    "page": page->slug.current,  }            }          }        }      },    },  }
+// Query: *[_type == 'page' && slug.current == $slug][0]{    _id,    _type,    name,    slug,    heading,    subheading,    "pageBuilder": pageBuilder[]{      ...,      _type == "callToAction" => {        ...,        button {          ...,            link {      ...,        _type == "link" => {    "page": select(      page->_type == "feedbackPage" => "feedback",      page->slug.current    ),  }      }        }      },      _type == "infoSection" => {        content[]{            ...,  markDefs[]{    ...,      _type == "link" => {    "page": select(      page->_type == "feedbackPage" => "feedback",      page->slug.current    ),  }  },            _type == "accordionGroup" => {    ...,    items[]{      ...,      content[]{          ...,  markDefs[]{    ...,      _type == "link" => {    "page": select(      page->_type == "feedbackPage" => "feedback",      page->slug.current    ),  }  }      }    }  }        }      },      _type == "splitSection" => {        ...,        content[]{            ...,  markDefs[]{    ...,      _type == "link" => {    "page": select(      page->_type == "feedbackPage" => "feedback",      page->slug.current    ),  }  },            _type == "accordionGroup" => {    ...,    items[]{      ...,      content[]{          ...,  markDefs[]{    ...,      _type == "link" => {    "page": select(      page->_type == "feedbackPage" => "feedback",      page->slug.current    ),  }  }      }    }  }        },        buttonGroup {          ...,          buttons[]{            ...,              link {      ...,        _type == "link" => {    "page": select(      page->_type == "feedbackPage" => "feedback",      page->slug.current    ),  }      }          }        }      },      _type == "steps" => {        ...,        steps[]{          ...,          text[]{              ...,  markDefs[]{    ...,      _type == "link" => {    "page": select(      page->_type == "feedbackPage" => "feedback",      page->slug.current    ),  }  },              _type == "accordionGroup" => {    ...,    items[]{      ...,      content[]{          ...,  markDefs[]{    ...,      _type == "link" => {    "page": select(      page->_type == "feedbackPage" => "feedback",      page->slug.current    ),  }  }      }    }  }          }        }      },    },  }
 export type GetPageQueryResult = {
   _id: string;
   _type: "page";
@@ -888,7 +891,7 @@ export type GetPageQueryResult = {
             _type: "link";
             linkType?: "anchor" | "demo" | "href" | "page";
             href?: string;
-            page: string | null;
+            page: string | "feedback" | null;
             anchor?: string;
             openInNewTab?: boolean;
           } | null;
@@ -916,12 +919,40 @@ export type GetPageQueryResult = {
           | {
               _key: string;
               _type: "accordionGroup";
-              items?: Array<{
+              items: Array<{
                 title: string;
-                content?: BlockContentTextOnly;
+                content: Array<{
+                  children?: Array<{
+                    marks?: Array<string>;
+                    text?: string;
+                    _type: "span";
+                    _key: string;
+                  }>;
+                  style?:
+                    | "blockquote"
+                    | "h1"
+                    | "h2"
+                    | "h3"
+                    | "h4"
+                    | "h5"
+                    | "h6"
+                    | "normal";
+                  listItem?: "bullet" | "number";
+                  markDefs: Array<{
+                    linkType?: "href" | "page";
+                    href?: string;
+                    page: string | "feedback" | null;
+                    openInNewTab?: boolean;
+                    _type: "link";
+                    _key: string;
+                  }> | null;
+                  level?: number;
+                  _type: "block";
+                  _key: string;
+                }> | null;
                 _type: "accordionItem";
                 _key: string;
-              }>;
+              }> | null;
               markDefs: null;
             }
           | {
@@ -950,7 +981,7 @@ export type GetPageQueryResult = {
                 | {
                     linkType?: "href" | "page";
                     href?: string;
-                    page: string | null;
+                    page: string | "feedback" | null;
                     openInNewTab?: boolean;
                     _type: "link";
                     _key: string;
@@ -1012,12 +1043,40 @@ export type GetPageQueryResult = {
           | {
               _key: string;
               _type: "accordionGroup";
-              items?: Array<{
+              items: Array<{
                 title: string;
-                content?: BlockContentTextOnly;
+                content: Array<{
+                  children?: Array<{
+                    marks?: Array<string>;
+                    text?: string;
+                    _type: "span";
+                    _key: string;
+                  }>;
+                  style?:
+                    | "blockquote"
+                    | "h1"
+                    | "h2"
+                    | "h3"
+                    | "h4"
+                    | "h5"
+                    | "h6"
+                    | "normal";
+                  listItem?: "bullet" | "number";
+                  markDefs: Array<{
+                    linkType?: "href" | "page";
+                    href?: string;
+                    page: string | "feedback" | null;
+                    openInNewTab?: boolean;
+                    _type: "link";
+                    _key: string;
+                  }> | null;
+                  level?: number;
+                  _type: "block";
+                  _key: string;
+                }> | null;
                 _type: "accordionItem";
                 _key: string;
-              }>;
+              }> | null;
               markDefs: null;
             }
           | {
@@ -1046,7 +1105,7 @@ export type GetPageQueryResult = {
                 | {
                     linkType?: "href" | "page";
                     href?: string;
-                    page: string | null;
+                    page: string | "feedback" | null;
                     openInNewTab?: boolean;
                     _type: "link";
                     _key: string;
@@ -1159,8 +1218,8 @@ export type PagesSlugsResult = Array<{
 import "@sanity/client";
 declare module "@sanity/client" {
   interface SanityQueries {
-    '*[_type == "settings"][0]{\n  ...,\n  headerButtons[]{\n    ...,\n    \n  link {\n      ...,\n      \n  _type == "link" => {\n    "page": page->slug.current,\n  }\n\n      }\n\n  },\n  footerButtons[]{\n    ...,\n    \n  link {\n      ...,\n      \n  _type == "link" => {\n    "page": page->slug.current,\n  }\n\n      }\n\n  },\n  demoFallbackButton {\n    ...,\n    \n  link {\n      ...,\n      \n  _type == "link" => {\n    "page": page->slug.current,\n  }\n\n      }\n\n  }\n}': SettingsQueryResult;
-    '\n  *[_type == \'page\' && slug.current == $slug][0]{\n    _id,\n    _type,\n    name,\n    slug,\n    heading,\n    subheading,\n    "pageBuilder": pageBuilder[]{\n      ...,\n      _type == "callToAction" => {\n        ...,\n        button {\n          ...,\n          \n  link {\n      ...,\n      \n  _type == "link" => {\n    "page": page->slug.current,\n  }\n\n      }\n\n        }\n      },\n      _type == "infoSection" => {\n        content[]{\n          ...,\n          markDefs[]{\n            ...,\n            \n  _type == "link" => {\n    "page": page->slug.current,\n  }\n\n          }\n        }\n      },\n      _type == "splitSection" => {\n        ...,\n        content[]{\n          ...,\n          markDefs[]{\n            ...,\n            \n  _type == "link" => {\n    "page": page->slug.current,\n  }\n\n          }\n        },\n        buttonGroup {\n          ...,\n          buttons[]{\n            ...,\n            \n  link {\n      ...,\n      \n  _type == "link" => {\n    "page": page->slug.current,\n  }\n\n      }\n\n          }\n        }\n      },\n      _type == "steps" => {\n        ...,\n        steps[]{\n          ...,\n          text[]{\n            ...,\n            markDefs[]{\n              ...,\n              \n  _type == "link" => {\n    "page": page->slug.current,\n  }\n\n            }\n          }\n        }\n      },\n    },\n  }\n': GetPageQueryResult;
+    '*[_type == "settings"][0]{\n  ...,\n  headerButtons[]{\n    ...,\n    \n  link {\n      ...,\n      \n  _type == "link" => {\n    "page": select(\n      page->_type == "feedbackPage" => "feedback",\n      page->slug.current\n    ),\n  }\n\n      }\n\n  },\n  footerButtons[]{\n    ...,\n    \n  link {\n      ...,\n      \n  _type == "link" => {\n    "page": select(\n      page->_type == "feedbackPage" => "feedback",\n      page->slug.current\n    ),\n  }\n\n      }\n\n  },\n  demoFallbackButton {\n    ...,\n    \n  link {\n      ...,\n      \n  _type == "link" => {\n    "page": select(\n      page->_type == "feedbackPage" => "feedback",\n      page->slug.current\n    ),\n  }\n\n      }\n\n  }\n}': SettingsQueryResult;
+    '\n  *[_type == \'page\' && slug.current == $slug][0]{\n    _id,\n    _type,\n    name,\n    slug,\n    heading,\n    subheading,\n    "pageBuilder": pageBuilder[]{\n      ...,\n      _type == "callToAction" => {\n        ...,\n        button {\n          ...,\n          \n  link {\n      ...,\n      \n  _type == "link" => {\n    "page": select(\n      page->_type == "feedbackPage" => "feedback",\n      page->slug.current\n    ),\n  }\n\n      }\n\n        }\n      },\n      _type == "infoSection" => {\n        content[]{\n          \n  ...,\n  markDefs[]{\n    ...,\n    \n  _type == "link" => {\n    "page": select(\n      page->_type == "feedbackPage" => "feedback",\n      page->slug.current\n    ),\n  }\n\n  }\n,\n          \n  _type == "accordionGroup" => {\n    ...,\n    items[]{\n      ...,\n      content[]{\n        \n  ...,\n  markDefs[]{\n    ...,\n    \n  _type == "link" => {\n    "page": select(\n      page->_type == "feedbackPage" => "feedback",\n      page->slug.current\n    ),\n  }\n\n  }\n\n      }\n    }\n  }\n\n        }\n      },\n      _type == "splitSection" => {\n        ...,\n        content[]{\n          \n  ...,\n  markDefs[]{\n    ...,\n    \n  _type == "link" => {\n    "page": select(\n      page->_type == "feedbackPage" => "feedback",\n      page->slug.current\n    ),\n  }\n\n  }\n,\n          \n  _type == "accordionGroup" => {\n    ...,\n    items[]{\n      ...,\n      content[]{\n        \n  ...,\n  markDefs[]{\n    ...,\n    \n  _type == "link" => {\n    "page": select(\n      page->_type == "feedbackPage" => "feedback",\n      page->slug.current\n    ),\n  }\n\n  }\n\n      }\n    }\n  }\n\n        },\n        buttonGroup {\n          ...,\n          buttons[]{\n            ...,\n            \n  link {\n      ...,\n      \n  _type == "link" => {\n    "page": select(\n      page->_type == "feedbackPage" => "feedback",\n      page->slug.current\n    ),\n  }\n\n      }\n\n          }\n        }\n      },\n      _type == "steps" => {\n        ...,\n        steps[]{\n          ...,\n          text[]{\n            \n  ...,\n  markDefs[]{\n    ...,\n    \n  _type == "link" => {\n    "page": select(\n      page->_type == "feedbackPage" => "feedback",\n      page->slug.current\n    ),\n  }\n\n  }\n,\n            \n  _type == "accordionGroup" => {\n    ...,\n    items[]{\n      ...,\n      content[]{\n        \n  ...,\n  markDefs[]{\n    ...,\n    \n  _type == "link" => {\n    "page": select(\n      page->_type == "feedbackPage" => "feedback",\n      page->slug.current\n    ),\n  }\n\n  }\n\n      }\n    }\n  }\n\n          }\n        }\n      },\n    },\n  }\n': GetPageQueryResult;
     '\n  *[_type == "page" && defined(slug.current)] | order(_type asc) {\n    "slug": slug.current,\n    _type,\n    _updatedAt,\n  }\n': SitemapDataResult;
     '\n  *[_type == "settings"][0].frontpage->slug.current\n': FrontpageQueryResult;
     '\n  *[_type == "page" && defined(slug.current)]\n  {"slug": slug.current}\n': PagesSlugsResult;
