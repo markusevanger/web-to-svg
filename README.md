@@ -22,9 +22,9 @@
 
 <!-- TODO: Replace with real Chrome Web Store URL -->
 
-[**Get it on the Chrome Web Store**](#)
+**Currently awaiting chrome webstore listing**
 
-Or install manually from the [latest release](https://github.com/markusevanger/to-svg/releases):
+Meanwhile, install manually from the [latest release](https://github.com/markusevanger/to-svg/releases):
 
 1. Download and unzip the release
 2. Open `chrome://extensions/` and enable Developer Mode
