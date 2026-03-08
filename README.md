@@ -21,6 +21,7 @@
 ## Install
 
 <!-- TODO: Replace with real Chrome Web Store URL -->
+
 [**Get it on the Chrome Web Store**](#)
 
 Or install manually from the [latest release](https://github.com/markusevanger/to-svg/releases):
@@ -54,12 +55,12 @@ Then load the extension:
 
 ## Project Structure
 
-| Directory              | What it is                     |
-| ---------------------- | ------------------------------ |
-| `apps/extension/`      | Chrome Extension (Manifest V3) |
-| `packages/svg-engine/` | Shared SVG conversion engine   |
+| Directory              | What it is                                          |
+| ---------------------- | --------------------------------------------------- |
+| `apps/extension/`      | Chrome Extension (Manifest V3)                      |
+| `packages/svg-engine/` | Shared SVG conversion engine                        |
 | `apps/web/`            | [webtosvg.com](https://webtosvg.com) — landing page |
-| `apps/studio/`         | Sanity Studio for site content |
+| `apps/studio/`         | Sanity Studio for site content                      |
 
 ## Contributing
 
@@ -68,3 +69,5 @@ Contributions to the extension are welcome! See [CONTRIBUTING.md](CONTRIBUTING.m
 ## License
 
 [MIT](LICENSE)
+
+By [markusevanger.no](https://markusevanger.no)
