@@ -9,11 +9,13 @@ export class Picker {
    * @param {import('./adapter.js').PlatformAdapter} options.adapter
    * @param {HTMLElement} [options.container] - scoping container (defaults to document.body)
    * @param {() => void} [options.onCleanup] - called when picker deactivates
+   * @param {(name: string, detail?: Record<string, any>) => void} [options.onEvent] - called on trackable actions
    */
-  constructor({ adapter, container, onCleanup }) {
+  constructor({ adapter, container, onCleanup, onEvent }) {
     this.adapter = adapter;
     this.container = container || document.body;
     this.onCleanup = onCleanup;
+    this.onEvent = onEvent;
     this.active = false;
     this._scoped = this.container !== document.body;
 
@@ -60,6 +62,7 @@ export class Picker {
       return;
     }
     this.active = true;
+    this._activatedAt = Date.now();
     this._injectStyles();
     this._createElements();
     this._attachListeners();
@@ -67,6 +70,8 @@ export class Picker {
 
   deactivate() {
     if (!this.active) return;
+    const duration = this._activatedAt ? Math.round((Date.now() - this._activatedAt) / 1000) : 0;
+    this.onEvent?.('end', { duration });
     this._pinned = false;
     this._pinnedCopySvg = null;
     if (this._preview?._docClickHandler) {
@@ -499,6 +504,7 @@ export class Picker {
   _pinPreview(element, svgString) {
     this._pinned = true;
     this._hideScrollCursor();
+    this.onEvent?.('element-selected', { tag: element.tagName.toLowerCase() });
 
     const state = { svg: svgString };
 
@@ -506,6 +512,7 @@ export class Picker {
       try {
         await navigator.clipboard.writeText(state.svg);
         this._showToast('SVG copied to clipboard');
+        this.onEvent?.('copy-svg');
       } catch {
         this._showToast('Copy failed \u2014 check permissions');
       }
@@ -601,6 +608,7 @@ export class Picker {
           const dataUrl = await this._blobToDataUrl(blob);
           this.adapter.download(dataUrl, baseName + '.svg');
           this._showToast('SVG downloaded');
+          this.onEvent?.('download-svg');
         }],
       ], modKey + 'C'));
 
@@ -609,6 +617,7 @@ export class Picker {
           const pngBlob = await svgToPNG(state.svg, rect.width, rect.height, settings.pngScale);
           await navigator.clipboard.write([new ClipboardItem({ 'image/png': pngBlob })]);
           this._showToast('PNG copied to clipboard');
+          this.onEvent?.('copy-png');
         } catch (err) {
           this._showToast('Copy PNG failed: ' + err.message);
         }
@@ -618,6 +627,7 @@ export class Picker {
             const pngBlob = await svgToPNG(state.svg, rect.width, rect.height, settings.pngScale);
             await navigator.clipboard.write([new ClipboardItem({ 'image/png': pngBlob })]);
             this._showToast('PNG copied to clipboard');
+            this.onEvent?.('copy-png');
           } catch (err) {
             this._showToast('Copy PNG failed: ' + err.message);
           }
@@ -628,6 +638,7 @@ export class Picker {
             const dataUrl = await this._blobToDataUrl(pngBlob);
             this.adapter.download(dataUrl, baseName + '.png');
             this._showToast('PNG downloaded');
+            this.onEvent?.('download-png');
           } catch (err) {
             this._showToast('PNG export failed: ' + err.message);
           }

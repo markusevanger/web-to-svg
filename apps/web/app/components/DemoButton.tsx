@@ -1,5 +1,11 @@
 'use client'
 
+declare global {
+  interface Window {
+    umami?: { track: (event: string, data?: Record<string, unknown>) => void }
+  }
+}
+
 import {useRef, useState, useCallback, useEffect} from 'react'
 import LucideIcon from '@/app/components/LucideIcon'
 
@@ -31,10 +37,14 @@ export default function DemoButton({label, icon, iconPosition = 'right', variant
         pickerRef.current = null
         setActive(false)
       },
+      onEvent: (name: string, detail?: Record<string, unknown>) => {
+        window.umami?.track(`demo-${name}`, detail)
+      },
     })
     pickerRef.current = picker
     picker.activate()
     setActive(true)
+    window.umami?.track('demo-start')
   }, [active])
 
   // Escape key to close
