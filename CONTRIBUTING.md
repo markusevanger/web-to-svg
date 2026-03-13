@@ -34,7 +34,6 @@ No environment variables or API keys needed for extension development.
 
 ## Pull Requests
 
-- Open an issue first for larger changes so we can discuss the approach
 - Keep PRs focused — one feature or fix per PR
 - Test the extension manually before submitting (no automated tests yet)
 
